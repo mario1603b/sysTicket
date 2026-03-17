@@ -3,7 +3,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getAuth, creat
 import { doc, getDoc, collection, onSnapshot, updateDoc, addDoc, setDoc, deleteDoc, serverTimestamp, getFirestore, query, orderBy } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { initializeApp, deleteApp } from 'firebase/app';
-import { Clock, LogOut, MessageSquare, Shield, Trash2, Plus, Users, Send, CheckCircle2, AlertCircle, Briefcase, MapPin, Calendar, Check, X, Download, Paperclip, FileText, Map, FolderKanban, Tag, UserCog } from 'lucide-react';
+import { Clock, LogOut, MessageSquare, Shield, Trash2, Plus, Users, Send, CheckCircle2, AlertCircle, Briefcase, MapPin, Calendar, Check, X, Download, Paperclip, FileText, Map, FolderKanban, Tag, UserCog, ChevronLeft } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE FIREBASE ---
 const firebaseConfig = {
@@ -20,7 +20,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// --- FUNCIONES AUXILIARES (Fechas) ---
+// --- FUNCIONES AUXILIARES ---
 const getMonthsDiff = (startDate) => {
   if (!startDate) return 0;
   const start = new Date(startDate);
@@ -48,16 +48,26 @@ const calculateDays = (start, end) => {
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const userDocRef = doc(db, 'usuarios', firebaseUser.uid);
         const userDoc = await getDoc(userDocRef);
+        
         if (userDoc.exists()) {
           setUser({ uid: firebaseUser.uid, ...userDoc.data() });
         } else {
-          setUser({ uid: firebaseUser.uid, role: 'admin', nombre: 'Administrador Principal', correo: firebaseUser.email });
+          // CORRECCIÓN: Guardamos al admin en Firestore para que el Chat lo reconozca
+          const adminData = { 
+            role: 'admin', 
+            nombre: 'Administrador Principal', 
+            correo: firebaseUser.email,
+            empleadoId: 'ADMIN-000'
+          };
+          await setDoc(userDocRef, adminData);
+          setUser({ uid: firebaseUser.uid, ...adminData });
         }
       } else { setUser(null); }
       setLoading(false);
@@ -84,18 +94,122 @@ export default function App() {
       </nav>
 
       <main className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
-        {/* Enrutamiento según el Rol */}
         {user.role === 'admin' ? (
           <AdminDashboard adminUser={user} />
         ) : (
           <>
             <UserProfile userData={user} />
-            {/* Si es supervisor, mostramos el panel de estado del equipo */}
             {user.role === 'supervisor' && <TeamStatus />}
             <AbsenceModule currentUser={user} />
           </>
         )}
       </main>
+
+      {/* CHAT FLOTANTE GLOBAL */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+        {chatOpen && (
+          <div className="w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col h-[500px] animate-in slide-in-from-bottom-10">
+            <GlobalChatManager currentUser={user} onClose={() => setChatOpen(false)} />
+          </div>
+        )}
+        <button 
+          onClick={() => setChatOpen(!chatOpen)} 
+          className="bg-indigo-600 text-white p-4 rounded-full shadow-xl hover:bg-indigo-700 hover:scale-105 transition duration-200 flex items-center justify-center"
+          title="Abrir Comunicaciones"
+        >
+          {chatOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// --- GESTOR GLOBAL DE CHAT (Contactos e Hilos) ---
+function GlobalChatManager({ currentUser, onClose }) {
+  const [users, setUsers] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [activeContact, setActiveContact] = useState(null);
+
+  useEffect(() => {
+    const unU = onSnapshot(collection(db, 'usuarios'), snap => {
+      setUsers(snap.docs.map(d => ({ uid: d.id, ...d.data() })));
+    });
+    const unM = onSnapshot(collection(db, 'mensajes'), snap => {
+      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => { unU(); unM(); };
+  }, []);
+
+  // Lógica de Permisos de Visibilidad de Contactos
+  const allowedContacts = users.filter(u => {
+    if (u.uid === currentUser.uid) return false; // No chatear consigo mismo
+
+    // Verificamos si hay un historial de chat entre el Admin y el usuario actual
+    const adminHasMessagedMe = messages.some(m => m.from === u.uid && m.to === currentUser.uid && u.role === 'admin');
+    const iHaveMessagedAdmin = messages.some(m => m.from === currentUser.uid && m.to === u.uid && u.role === 'admin');
+    const hasAdminHistory = adminHasMessagedMe || iHaveMessagedAdmin;
+
+    if (currentUser.role === 'admin') return true; // Admin ve a todos
+    
+    if (currentUser.role === 'rh') {
+      // RH ve a usuarios, supervisores, y al admin si el admin le ha hablado
+      return u.role === 'user' || u.role === 'supervisor' || (u.role === 'admin' && hasAdminHistory);
+    }
+    
+    if (currentUser.role === 'supervisor') {
+      // Supervisor ve a su equipo (usuarios), a RH, otros supervisores, y al Admin si le ha hablado
+      return u.role === 'user' || u.role === 'rh' || u.role === 'supervisor' || (u.role === 'admin' && hasAdminHistory);
+    }
+    
+    // Empleado normal
+    // Ve a los supervisores, a RH, y al admin SOLO si el admin le ha hablado antes
+    return u.role === 'supervisor' || u.role === 'rh' || (u.role === 'admin' && hasAdminHistory);
+  });
+
+  const getRoleLabel = (role) => {
+    switch(role) {
+      case 'admin': return 'Dirección';
+      case 'rh': return 'Recursos Humanos';
+      case 'supervisor': return 'Supervisor';
+      default: return 'Empleado';
+    }
+  };
+
+  if (activeContact) {
+    return (
+      <div className="flex flex-col h-full bg-gray-50">
+        <div className="bg-indigo-600 text-white p-3 flex items-center gap-2 shadow-sm z-10">
+          <button onClick={() => setActiveContact(null)} className="hover:bg-indigo-700 p-1.5 rounded-lg transition"><ChevronLeft className="w-5 h-5"/></button>
+          <img src={`https://ui-avatars.com/api/?name=${activeContact.nombre}&background=e0e7ff&color=4f46e5`} className="w-8 h-8 rounded-full border border-indigo-400" alt=""/>
+          <div className="flex-1 overflow-hidden">
+            <h3 className="font-bold text-sm truncate leading-tight">{activeContact.nombre}</h3>
+            <p className="text-[10px] text-indigo-200 uppercase tracking-wider">{getRoleLabel(activeContact.role)}</p>
+          </div>
+        </div>
+        <ChatBox currentUserId={currentUser.uid} otherParty={activeContact.uid} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-white">
+      <div className="bg-indigo-600 text-white p-4 shadow-sm z-10 flex justify-between items-center">
+        <h3 className="font-bold">Contactos Autorizados</h3>
+      </div>
+      <div className="flex-1 overflow-y-auto p-2">
+        {allowedContacts.map(c => (
+          <button key={c.uid} onClick={() => setActiveContact(c)} className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition text-left border border-transparent hover:border-gray-100 group">
+            <img src={`https://ui-avatars.com/api/?name=${c.nombre}&background=e0e7ff&color=4f46e5`} className="w-12 h-12 rounded-full shadow-sm group-hover:scale-105 transition" alt=""/>
+            <div className="flex-1 border-b border-gray-100 pb-2 group-hover:border-transparent transition">
+              <p className="font-bold text-gray-800 text-sm">{c.nombre}</p>
+              <p className={`text-[10px] uppercase font-bold tracking-wider mt-0.5 ${c.role === 'admin' ? 'text-orange-500' : c.role === 'rh' ? 'text-pink-500' : c.role === 'supervisor' ? 'text-purple-500' : 'text-blue-500'}`}>
+                {getRoleLabel(c.role)}
+              </p>
+            </div>
+          </button>
+        ))}
+        {allowedContacts.length === 0 && <p className="text-center text-sm text-gray-400 mt-10">No tienes contactos asignados.</p>}
+      </div>
     </div>
   );
 }
@@ -193,9 +307,7 @@ function TeamStatus() {
 
 // --- PERFIL DE USUARIO ---
 function UserProfile({ userData, isAdminView = false }) {
-  const [chatOpen, setChatOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState('Tareas Generales');
   const listaProyectos = ['Tareas Generales', 'Desarrollo Frontend', 'Desarrollo Backend', 'Soporte Técnico', 'Reuniones de Equipo', 'Formación / I+D'];
 
@@ -289,11 +401,6 @@ function UserProfile({ userData, isAdminView = false }) {
             <span className="text-xl font-black text-blue-600">{diasDisponibles}</span>
           </div>
         </div>
-        {!isAdminView && (
-          <button onClick={() => setChatOpen(!chatOpen)} className="w-full bg-white text-indigo-600 font-semibold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-50 transition border border-gray-200 shadow-sm">
-            <MessageSquare className="w-5 h-5" /> Chat Interno
-          </button>
-        )}
       </div>
 
       <div className="col-span-1 md:col-span-2 space-y-6">
@@ -375,16 +482,6 @@ function UserProfile({ userData, isAdminView = false }) {
           </div>
         </div>
       </div>
-
-      {!isAdminView && chatOpen && (
-        <div className="fixed bottom-6 right-6 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden flex flex-col h-96">
-          <div className="bg-indigo-600 text-white p-3 flex justify-between items-center">
-            <span className="font-semibold text-sm flex items-center gap-2"><MessageSquare className="w-4 h-4"/> Admin Chat</span>
-            <button onClick={() => setChatOpen(false)} className="hover:text-indigo-200"><X className="w-5 h-5"/></button>
-          </div>
-          <ChatBox currentUserId={userData.uid} otherParty="admin" />
-        </div>
-      )}
     </div>
   );
 }
@@ -398,10 +495,9 @@ function AbsenceModule({ currentUser }) {
   const [archivo, setArchivo] = useState(null); 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Un supervisor o un admin pueden gestionar las vacaciones
-  const isManager = currentUser.role === 'admin' || currentUser.role === 'supervisor';
-  // Un empleado normal o un supervisor pueden pedir vacaciones para sí mismos
-  const isWorker = currentUser.role === 'user' || currentUser.role === 'supervisor';
+  // RH y Admin aprueban
+  const canApprove = currentUser.role === 'admin' || currentUser.role === 'rh';
+  const isWorker = currentUser.role === 'user' || currentUser.role === 'supervisor' || currentUser.role === 'rh';
 
   useEffect(() => {
     const q = query(collection(db, 'vacaciones'), orderBy('timestamp', 'desc'));
@@ -442,7 +538,7 @@ function AbsenceModule({ currentUser }) {
       });
       
       setFechaInicio(''); setFechaFin(''); setArchivo(null); setTipoAusencia('vacaciones');
-      alert("Solicitud enviada a gerencia.");
+      alert("Solicitud enviada a Recursos Humanos.");
     } catch (error) { console.error("Error", error); alert("Error al subir el justificante"); }
     setIsSubmitting(false);
   };
@@ -484,8 +580,8 @@ function AbsenceModule({ currentUser }) {
 
       <div className="p-6 flex flex-col gap-8">
         
-        {/* FILA SUPERIOR: Formularios y Pendientes */}
-        <div className={`grid grid-cols-1 ${isWorker && isManager ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-8`}>
+        {/* FILA SUPERIOR: Solicitudes y Aprobaciones */}
+        <div className={`grid grid-cols-1 ${isWorker && canApprove ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-8`}>
           
           {isWorker && (
             <div className="space-y-6">
@@ -513,23 +609,20 @@ function AbsenceModule({ currentUser }) {
 
                   {tipoAusencia === 'baja_medica' && (
                     <div className="bg-blue-50 p-3 rounded border border-blue-200 border-dashed">
-                      <label className="block text-xs text-blue-800 font-semibold mb-1 flex items-center gap-1"><Paperclip className="w-3 h-3"/> Adjuntar Justificante Médico</label>
+                      <label className="block text-xs text-blue-800 font-semibold mb-1 flex items-center gap-1"><Paperclip className="w-3 h-3"/> Adjuntar Justificante</label>
                       <input type="file" required accept="image/*,.pdf" onChange={e => setArchivo(e.target.files[0])} className="w-full text-xs text-gray-600 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" />
                     </div>
                   )}
 
-                  <div className="text-xs text-gray-500 bg-white p-2 border rounded text-center">
-                    Días calculados: <strong className="text-gray-800">{fechaInicio && fechaFin && new Date(fechaInicio) <= new Date(fechaFin) ? calculateDays(fechaInicio, fechaFin) : 0}</strong>
-                  </div>
                   <button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">
-                    {isSubmitting ? 'Enviando...' : 'Enviar Solicitud'}
+                    {isSubmitting ? 'Enviando...' : 'Enviar Solicitud a RH'}
                   </button>
                 </form>
               </div>
 
               {/* Historial Personal */}
               <div className="bg-white border rounded-xl overflow-hidden">
-                 <div className="bg-gray-50 p-3 border-b"><h3 className="text-sm font-semibold text-gray-700">Mi Historial de Solicitudes</h3></div>
+                 <div className="bg-gray-50 p-3 border-b"><h3 className="text-sm font-semibold text-gray-700">Mi Historial</h3></div>
                  <div className="max-h-48 overflow-y-auto p-3 space-y-2">
                    {misSolicitudes.map(s => (
                      <div key={s.id} className="text-xs flex justify-between items-center p-2 bg-gray-50 rounded border border-gray-100">
@@ -548,9 +641,10 @@ function AbsenceModule({ currentUser }) {
             </div>
           )}
 
-          {isManager && (
+          {/* Panel de Aprobación (Solo RH o Admin) */}
+          {canApprove && (
             <div className="bg-orange-50 p-5 rounded-xl border border-orange-200 max-h-[600px] overflow-y-auto">
-              <h3 className="font-semibold text-orange-900 mb-4 flex items-center gap-2">Peticiones Pendientes de Aprobar <span className="bg-orange-600 text-white text-xs px-2 py-0.5 rounded-full">{solicitudes.filter(s=>s.estado==='pendiente').length}</span></h3>
+              <h3 className="font-semibold text-orange-900 mb-4 flex items-center gap-2">Peticiones de Empleados <span className="bg-orange-600 text-white text-xs px-2 py-0.5 rounded-full">{solicitudes.filter(s=>s.estado==='pendiente').length}</span></h3>
               <div className="space-y-3">
                 {solicitudes.filter(s => s.estado === 'pendiente').map(s => (
                   <div key={s.id} className="bg-white p-3 rounded-lg border border-orange-100 shadow-sm text-sm relative">
@@ -581,7 +675,7 @@ function AbsenceModule({ currentUser }) {
         <div className="border border-gray-200 rounded-xl overflow-hidden w-full">
           <div className="bg-gray-50 p-4 border-b border-gray-200">
             <h3 className="font-semibold text-gray-800">Ausencias Programadas (Equipo)</h3>
-            <p className="text-xs text-gray-500">Solo se muestran las ausencias aprobadas por dirección.</p>
+            <p className="text-xs text-gray-500">Solo se muestran las ausencias aprobadas por Recursos Humanos.</p>
           </div>
           <div className="p-4 overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[500px]">
@@ -591,7 +685,6 @@ function AbsenceModule({ currentUser }) {
                   <th className="pb-2 font-medium">Motivo</th>
                   <th className="pb-2 font-medium">Desde</th>
                   <th className="pb-2 font-medium">Hasta</th>
-                  <th className="pb-2 font-medium text-right">Días</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -608,7 +701,6 @@ function AbsenceModule({ currentUser }) {
                     </td>
                     <td className="py-3 text-sm text-gray-600">{formatDate(vac.fechaInicio)}</td>
                     <td className="py-3 text-sm text-gray-600">{formatDate(vac.fechaFin)}</td>
-                    <td className="py-3 text-sm font-semibold text-gray-800 text-right">{vac.diasSolicitados} d</td>
                   </tr>
                 ))}
               </tbody>
@@ -625,30 +717,21 @@ function AbsenceModule({ currentUser }) {
 // --- PANEL DE ADMINISTRADOR ---
 function AdminDashboard({ adminUser }) {
   const [users, setUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     const q = collection(db, 'usuarios');
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      // El admin ve a todos excepto a sí mismo
       const usersData = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() })).filter(u => u.uid !== adminUser.uid && u.role !== 'admin');
       setUsers(usersData);
-      if (selectedUser) {
-        const updated = usersData.find(u => u.uid === selectedUser.uid);
-        if (updated) setSelectedUser(updated);
-      }
     });
     return () => unsubscribe();
-  }, [selectedUser, adminUser.uid]);
+  }, [adminUser.uid]);
 
   const handleDelete = async (uid) => {
     if(window.confirm('¿Seguro que deseas eliminar este registro de usuario?')) {
-      try {
-        await deleteDoc(doc(db, 'usuarios', uid));
-        if(selectedUser?.uid === uid) setSelectedUser(null);
-      } catch (error) { console.error(error); }
+      try { await deleteDoc(doc(db, 'usuarios', uid)); } catch (error) { console.error(error); }
     }
   };
 
@@ -674,7 +757,7 @@ function AdminDashboard({ adminUser }) {
         empleadoId: formData.get('empleadoId'),
         horario_definido: formData.get('horario_definido'),
         fecha_inicio_contrato: formData.get('fecha_inicio_contrato'),
-        role: formData.get('role'), // Nuevo campo de Rol
+        role: formData.get('role'), 
         dias_vacaciones_gastados: 0,
         total_horas_semana: 0,
         isClockedIn: false,
@@ -689,7 +772,6 @@ function AdminDashboard({ adminUser }) {
     finally { setIsCreating(false); }
   };
 
-  // --- EXPORTAR A CSV ---
   const exportToCSV = () => {
     const headers = ['Nombre', 'Correo', 'Rol', 'Puesto', 'ID Empleado', 'Modalidad', 'Horas Semanales', 'Vacaciones Disponibles', 'Estado Actual', 'Proyecto', 'Ubicación GPS'];
     const rows = users.map(u => {
@@ -699,7 +781,7 @@ function AdminDashboard({ adminUser }) {
       const estado = u.isClockedIn ? 'Trabajando' : 'Inactivo';
       const proyecto = u.isClockedIn && u.proyectoActual ? `"${u.proyectoActual}"` : '"-"';
       const gps = u.ultimaUbicacion ? `"${u.ultimaUbicacion.lat}, ${u.ultimaUbicacion.lng}"` : '"No registrada"';
-      const rolHR = u.role === 'supervisor' ? 'Supervisor' : 'Empleado';
+      const rolHR = u.role === 'supervisor' ? 'Supervisor' : u.role === 'rh' ? 'Recursos Humanos' : 'Empleado';
       
       return [`"${u.nombre}"`, `"${u.correo}"`, `"${rolHR}"`, `"${u.puesto}"`, `"${u.empleadoId}"`, `"${modalidad}"`, (u.total_horas_semana || 0).toFixed(1), diasDisp, `"${estado}"`, proyecto, gps].join(',');
     });
@@ -710,25 +792,6 @@ function AdminDashboard({ adminUser }) {
     link.setAttribute("download", `informe_empleados_sysTicket_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
-
-  if (selectedUser) {
-    return (
-      <div className="space-y-4">
-        <button onClick={() => setSelectedUser(null)} className="text-indigo-600 hover:underline font-medium text-sm flex items-center gap-1">← Volver al Panel</button>
-        <div className="bg-white border p-4 rounded-xl flex justify-between items-center shadow-sm">
-          <h2 className="font-bold text-gray-800">Gestionando a: <span className="text-indigo-600">{selectedUser.nombre}</span></h2>
-          <button onClick={() => handleDelete(selectedUser.uid)} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-100 transition flex items-center gap-1"><Trash2 className="w-4 h-4"/> Eliminar Ficha</button>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2"><UserProfile userData={selectedUser} isAdminView={true} /></div>
-          <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[500px]">
-             <div className="bg-gray-50 border-b p-3 rounded-t-xl"><h3 className="font-semibold text-gray-700 flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Chat Directo</h3></div>
-             <ChatBox currentUserId="admin" otherParty={selectedUser.uid} />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -753,17 +816,18 @@ function AdminDashboard({ adminUser }) {
           <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div>
               <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Rol del Usuario</label>
-              <select name="role" className="border p-2.5 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+              <select name="role" className="border border-indigo-200 bg-indigo-50 p-2.5 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none">
                 <option value="user">Empleado Normal</option>
                 <option value="supervisor">Supervisor de Equipo</option>
+                <option value="rh">Recursos Humanos (RH)</option>
               </select>
             </div>
-            <div><label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Contraseña Acceso</label><input name="password" required type="text" placeholder="min. 6 caracteres" minLength="6" className="border border-indigo-200 bg-indigo-50 p-2.5 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
+            <div><label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Contraseña Acceso</label><input name="password" required type="text" placeholder="min. 6 caracteres" minLength="6" className="border p-2.5 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
             <div><label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Nombre Completo</label><input name="nombre" required type="text" placeholder="Ej: Ana García" className="border p-2.5 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
             <div><label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Correo</label><input name="correo" required type="email" placeholder="ana@systicket.com" className="border p-2.5 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
             <div><label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Puesto</label><input name="puesto" required type="text" placeholder="Ej: Frontend" className="border p-2.5 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
             <div><label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">ID Interno</label><input name="empleadoId" required type="text" placeholder="Ej: A003-XXX" className="border p-2.5 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
-            <div><label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Fecha Alta Contrato</label><input name="fecha_inicio_contrato" required type="date" className="border border-blue-200 bg-blue-50 p-2.5 rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none" title="Necesario para calcular vacaciones" /></div>
+            <div><label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Fecha Alta Contrato</label><input name="fecha_inicio_contrato" required type="date" className="border border-blue-200 bg-blue-50 p-2.5 rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none" /></div>
             <div><label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Horario Base</label><input name="horario_definido" required type="text" defaultValue="09:00 - 17:00" className="border p-2.5 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
             
             <div className="col-span-full flex justify-end mt-2 pt-4 border-t">
@@ -792,14 +856,15 @@ function AdminDashboard({ adminUser }) {
               const meses = getMonthsDiff(u.fecha_inicio_contrato);
               const diasDisp = (meses * 2) - (u.dias_vacaciones_gastados || 0);
               return (
-              <tr key={u.uid} className="hover:bg-indigo-50/50 transition cursor-pointer" onClick={() => setSelectedUser(u)}>
+              <tr key={u.uid} className="hover:bg-indigo-50/50 transition">
                 <td className="p-4">
                   <div className="flex items-center gap-3">
                     <img src={`https://ui-avatars.com/api/?name=${u.nombre}&background=e0e7ff&color=4f46e5`} className="w-10 h-10 rounded-full border border-indigo-100" alt="" />
                     <div>
                       <p className="font-bold text-gray-800 flex items-center gap-1">
                         {u.nombre} 
-                        {u.role === 'supervisor' && <UserCog className="w-3.5 h-3.5 text-indigo-500" title="Supervisor" />}
+                        {u.role === 'supervisor' && <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 rounded font-bold">Sup</span>}
+                        {u.role === 'rh' && <span className="text-[10px] bg-pink-100 text-pink-700 px-1.5 rounded font-bold">RH</span>}
                       </p>
                       <p className="text-xs text-gray-500 font-mono">{u.empleadoId}</p>
                     </div>
@@ -834,7 +899,9 @@ function AdminDashboard({ adminUser }) {
                   )}
                 </td>
 
-                <td className="p-4 text-right text-indigo-600 font-semibold text-sm group-hover:underline">Abrir →</td>
+                <td className="p-4 text-right text-indigo-600 font-semibold text-sm">
+                  <button onClick={() => handleDelete(u.uid)} className="bg-red-50 text-red-600 px-3 py-1 rounded hover:bg-red-100 transition"><Trash2 className="w-4 h-4"/></button>
+                </td>
               </tr>
             )})}
           </tbody>
@@ -845,7 +912,7 @@ function AdminDashboard({ adminUser }) {
   );
 }
 
-// --- CHAT BOX ---
+// --- CHAT BOX (Hilo directo) ---
 function ChatBox({ currentUserId, otherParty }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
@@ -867,7 +934,7 @@ function ChatBox({ currentUserId, otherParty }) {
   };
 
   return (
-    <div className="flex flex-col flex-1 bg-gray-50 overflow-hidden">
+    <div className="flex flex-col flex-1 bg-gray-50 overflow-hidden h-full">
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map(m => (
           <div key={m.id} className={`flex flex-col ${m.from === currentUserId ? 'items-end' : 'items-start'}`}>
@@ -876,7 +943,7 @@ function ChatBox({ currentUserId, otherParty }) {
         ))}
       </div>
       <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-200 flex gap-2">
-        <input type="text" value={text} onChange={e => setText(e.target.value)} placeholder="Mensaje..." className="flex-1 bg-gray-100 border-transparent rounded-full px-4 py-2 text-sm focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition" />
+        <input type="text" value={text} onChange={e => setText(e.target.value)} placeholder="Escribe un mensaje..." className="flex-1 bg-gray-100 border-transparent rounded-full px-4 py-2 text-sm focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition" />
         <button type="submit" className="bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-700 transition shadow-sm hover:shadow-md transform hover:scale-105"><Send className="w-4 h-4" /></button>
       </form>
     </div>
