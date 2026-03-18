@@ -27,17 +27,12 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 // ─── EMAILJS CONFIG ───────────────────────────────────────────────────────────
-// 1. Crea cuenta en https://www.emailjs.com (gratis hasta 200 emails/mes)
-// 2. Crea un "Email Service" (Gmail, Outlook…)
-// 3. Crea un "Email Template" con variables: {{to_email}}, {{to_name}}, {{subject}}, {{message}}
-// 4. Rellena tus IDs aquí:
-const EMAILJS_SERVICE_ID  = 'TU_SERVICE_ID';   // ej: 'service_abc123'
-const EMAILJS_TEMPLATE_ID = 'TU_TEMPLATE_ID';  // ej: 'template_xyz789'
-const EMAILJS_PUBLIC_KEY  = 'TU_PUBLIC_KEY';   // ej: 'user_XXXXXXXXXXXXXXX'
+const EMAILJS_SERVICE_ID  = 'TU_SERVICE_ID';
+const EMAILJS_TEMPLATE_ID = 'TU_TEMPLATE_ID';
+const EMAILJS_PUBLIC_KEY  = 'TU_PUBLIC_KEY';
 
 const sendEmailNotification = async (toEmail, toName, subject, message) => {
   try {
-    // Carga EmailJS dinámicamente si no está disponible
     if (!window.emailjs) {
       await new Promise((resolve, reject) => {
         const script = document.createElement('script');
@@ -65,50 +60,45 @@ const sendEmailNotification = async (toEmail, toName, subject, message) => {
 // ─── TRADUCCIONES COMPLETAS ───────────────────────────────────────────────────
 const LANGS = {
   es: {
-    flag: '🇪🇸', name: 'Español',
-    // Nav
+    flag: 'es',
+    name: 'Español',
     greeting: 'Hola', logout: 'Cerrar sesión',
-    // Tabs
     tabStatus: 'Estado', tabAbsence: 'Ausencias', tabProjects: 'Proyectos',
     tabReports: 'Informes', tabTeam: 'Equipo',
-    // Status card
     status: 'Estado Actual', active: 'Trabajando', inactive: 'Inactivo',
     clockIn: 'Fichar Entrada', clockOut: 'Terminar Jornada',
     updateEntry: 'Actualizar entrada', save: 'Guardar',
-    // Metrics
     dailyLimit: 'Jornada Diaria (8h)', weeklyLimit: 'Total Semanal',
-    // Profile
     vacations: 'Días Disponibles', bonus: 'Bono Acumulado',
     vacLimit: 'Límite', workMode: 'Modalidad', remote: 'Teletrabajo',
     office: 'Oficina', schedule: 'Horario', department: 'Departamento',
-    // Absence
     absence: 'Gestión de Ausencias', newRequest: 'Nueva Solicitud',
     sendRequest: 'Enviar Solicitud', myHistory: 'Mi Historial',
     teamApproved: 'Ausencias Aprobadas (Equipo)',
     pending: 'Pendientes', approve: 'Aprobar', reject: 'Rechazar',
     medicalLeave: 'Baja Médica', medicalAppt: 'Cita Médica',
     invalidDates: 'Fechas inválidas', requestSent: 'Solicitud enviada',
-    // Admin
     adminPanel: 'Panel de Administración', employees: 'Empleados',
     reports: 'Informes', departments: 'Departamentos',
     addEmployee: 'Añadir Empleado', exportCSV: 'Exportar CSV',
     teamStatus: 'Estado del Equipo', configSaved: 'Configuración guardada',
     extraHourValue: 'Valor Hora Extra (€)', vacDaysLimit: 'Límite días vacaciones',
     saveChanges: 'Guardar cambios',
-    // Projects
     hoursProject: 'Horas por Proyecto', upload: 'Subir archivo',
-    // Reports
     advancedReports: 'Informes Avanzados',
-    // Chat
     contacts: 'Contactos', message: 'Mensaje...',
-    // Misc
     emailSent: 'Email enviado', viewMap: 'Ver Mapa',
     projects: 'Proyectos',
     listaProyectos: ['Tareas Generales', 'Desarrollo Frontend', 'Desarrollo Backend', 'Soporte Técnico', 'Reuniones de Equipo', 'Formación / I+D', 'Gestión / Administración'],
     roles: { user: 'Empleado', supervisor: 'Supervisor', rh: 'Recursos Humanos' },
+    viewProfile: 'Ver Perfil', close: 'Cerrar', employeeDetails: 'Detalles del Empleado',
+    gps: 'GPS',
+    action: 'Acción',
+    view: 'Ver',
   },
   en: {
-    flag: '🇬🇧', name: 'English',
+    flag: 'us',
+    name: 'English',
     greeting: 'Hello', logout: 'Logout',
     tabStatus: 'Status', tabAbsence: 'Absences', tabProjects: 'Projects',
     tabReports: 'Reports', tabTeam: 'Team',
@@ -138,9 +128,14 @@ const LANGS = {
     projects: 'Projects',
     listaProyectos: ['General Tasks', 'Frontend Dev', 'Backend Dev', 'Tech Support', 'Team Meetings', 'Training / R&D', 'Management'],
     roles: { user: 'Employee', supervisor: 'Supervisor', rh: 'HR' },
+    viewProfile: 'View Profile', close: 'Close', employeeDetails: 'Employee Details',
+    gps: 'GPS',
+    action: 'Action',
+    view: 'View',
   },
   fr: {
-    flag: '🇫🇷', name: 'Français',
+    flag: 'fr',
+    name: 'Français',
     greeting: 'Bonjour', logout: 'Déconnexion',
     tabStatus: 'Statut', tabAbsence: 'Absences', tabProjects: 'Projets',
     tabReports: 'Rapports', tabTeam: 'Équipe',
@@ -170,6 +165,10 @@ const LANGS = {
     projects: 'Projets',
     listaProyectos: ['Tâches générales', 'Dev Frontend', 'Dev Backend', 'Support technique', 'Réunions', 'Formation / R&D', 'Gestion / Admin'],
     roles: { user: 'Employé', supervisor: 'Superviseur', rh: 'RH' },
+    viewProfile: 'Voir le profil', close: 'Fermer', employeeDetails: 'Détails de l\'employé',
+    gps: 'GPS',
+    action: 'Action',
+    view: 'Voir',
   },
 };
 
@@ -209,7 +208,6 @@ export default function App() {
   const [user, setUser]           = useState(null);
   const [loading, setLoading]     = useState(true);
   const [chatOpen, setChatOpen]   = useState(false);
-  // Dark mode: lee de localStorage, aplica al <html> para que Tailwind lo capture
   const [darkMode, setDarkMode]   = useState(() => localStorage.getItem('st_dark') === 'true');
   const [lang, setLang]           = useState(() => localStorage.getItem('st_lang') || 'es');
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -221,7 +219,7 @@ export default function App() {
   const showToast = (message, type = 'success') => setToast({ message, type });
   const T = LANGS[lang] || LANGS.es;
 
-  // Aplicar dark mode al elemento raíz para que Tailwind lo capture correctamente
+  // Aplicar dark mode al elemento raíz
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -287,8 +285,25 @@ export default function App() {
     <>
       <style>{`
         @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        select option { background: white; color: #1e293b; }
-        .dark select option { background: #1e293b; color: #f1f5f9; }
+        .custom-select {
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 0.75rem center;
+          background-size: 1rem;
+          padding-right: 2.5rem;
+        }
+        .dark .custom-select {
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        }
+        .custom-select option {
+          background: white;
+          color: #1e293b;
+        }
+        .dark .custom-select option {
+          background: #1e293b;
+          color: #f1f5f9;
+        }
       `}</style>
 
       {toast && <Toast message={toast.message} type={toast.type} onDismiss={() => setToast(null)} />}
@@ -303,13 +318,13 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-1">
-            {/* Selector idioma */}
+            {/* Selector idioma con banderas (requiere flag-icons) */}
             <div className="relative">
               <button
                 onClick={() => setShowLangMenu(v => !v)}
                 className="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-white/15 transition text-base leading-none"
               >
-                <span style={{ fontSize: '18px', lineHeight: 1 }}>{LANGS[lang].flag}</span>
+                <span className={`fi fi-${LANGS[lang].flag}`} style={{ fontSize: '1.2em', lineHeight: 1 }}></span>
                 <ChevronDown className="w-3 h-3 opacity-60" />
               </button>
               {showLangMenu && (
@@ -320,7 +335,7 @@ export default function App() {
                       onClick={() => { setLang(code); setShowLangMenu(false); }}
                       className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-800 dark:text-gray-200 transition ${lang === code ? 'font-bold bg-indigo-50 dark:bg-indigo-900/40' : ''}`}
                     >
-                      <span style={{ fontSize: '18px', lineHeight: 1 }}>{data.flag}</span>
+                      <span className={`fi fi-${data.flag}`} style={{ fontSize: '1.2em' }}></span>
                       {data.name}
                     </button>
                   ))}
@@ -328,7 +343,6 @@ export default function App() {
               )}
             </div>
 
-            {/* Dark mode toggle */}
             <button
               onClick={() => setDarkMode(d => !d)}
               className="p-2 rounded-full hover:bg-white/15 transition"
@@ -337,7 +351,6 @@ export default function App() {
               {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
-            {/* Badge notificaciones */}
             {['admin', 'rh', 'supervisor'].includes(user.role) && (
               <button onClick={() => setActiveTab('absence')} className="relative p-2 rounded-full hover:bg-white/15 transition">
                 <Bell className="w-5 h-5" />
@@ -474,18 +487,18 @@ function LoginScreen() {
   );
 }
 
-// ─── PERFIL DE USUARIO ────────────────────────────────────────────────────────
-function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
+// ─── PERFIL DE USUARIO (con soporte para vista de solo lectura) ───────────────
+function UserProfile({ userData, config, T, isAdminView = false, showToast, isReadOnly = false }) {
   const [isProcessing, setIsProcessing]         = useState(false);
   const [proyecto, setProyecto]                 = useState(userData.proyectoActual || (T.listaProyectos[0]));
   const [isUploadingPic, setIsUploadingPic]     = useState(false);
   const [editClockIn, setEditClockIn]           = useState(false);
   const [newClockInTime, setNewClockInTime]     = useState('');
 
-  // Sync lista proyectos si cambia el idioma
   const listaProyectos = T.listaProyectos;
 
   const handleImageUpload = async (e) => {
+    if (isReadOnly) return;
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { showToast('Máx 5 MB', 'error'); return; }
@@ -501,6 +514,7 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
   };
 
   const handleClockIn = async () => {
+    if (isReadOnly) return;
     setIsProcessing(true);
     let ubicacion = null;
     try {
@@ -530,6 +544,7 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
   };
 
   const handleClockOut = async () => {
+    if (isReadOnly) return;
     setIsProcessing(true);
     try {
       const inTime  = new Date(userData.clockInTime);
@@ -553,6 +568,7 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
   };
 
   const handleUpdateClockIn = async () => {
+    if (isReadOnly) return;
     if (!newClockInTime) return;
     const today = new Date().toISOString().split('T')[0];
     await updateDoc(doc(db, 'usuarios', userData.uid), {
@@ -562,7 +578,6 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
     setEditClockIn(false);
   };
 
-  // Cálculos
   const horasSemanales   = userData.total_horas_semana || 0;
   const today            = new Date().toISOString().split('T')[0];
   const horasDiarias     = userData.fecha_ultimo_fichaje === today ? (userData.horas_hoy || 0) : 0;
@@ -582,26 +597,24 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* ── Tarjeta perfil ── */}
+      {/* Tarjeta perfil */}
       <div className="col-span-1">
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-          {/* Banner */}
           <div className="h-20 bg-gradient-to-br from-indigo-500 to-indigo-700" />
           <div className="px-6 pb-6 -mt-10 flex flex-col items-center text-center">
-            {/* Avatar */}
-            <label className={`relative group cursor-pointer ${isUploadingPic ? 'opacity-50 cursor-wait' : ''}`}>
+            <label className={`relative group ${isUploadingPic ? 'opacity-50 cursor-wait' : ''} ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}>
               <img
                 src={userData.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.nombre || 'U')}&background=4f46e5&color=fff&size=150`}
                 alt="Avatar"
                 className="w-20 h-20 rounded-full border-4 border-white dark:border-slate-800 shadow-lg object-cover bg-white"
               />
-              {!isAdminView && (
+              {!isReadOnly && !isAdminView && (
                 <div className="absolute inset-0 rounded-full bg-black/60 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition gap-0.5">
                   <Camera className="w-5 h-5" />
                   <span className="text-[9px] font-bold">{isUploadingPic ? '...' : 'Cambiar'}</span>
                 </div>
               )}
-              {!isAdminView && <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploadingPic} />}
+              {!isReadOnly && !isAdminView && <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploadingPic} />}
             </label>
 
             <h2 className="text-lg font-bold mt-3 flex items-center gap-1">
@@ -616,7 +629,6 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
               : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-300'
             }`}>{userData.role}</span>
 
-            {/* Info */}
             <div className="w-full mt-4 space-y-2 text-sm border-t dark:border-slate-700 pt-4">
               <Row icon={<Shield className="w-3.5 h-3.5" />} label="ID">
                 <span className="font-mono text-xs bg-gray-50 dark:bg-slate-700 px-2 py-0.5 rounded">{userData.empleadoId}</span>
@@ -634,7 +646,6 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
               )}
             </div>
 
-            {/* Vacaciones */}
             <div className="w-full mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-3 flex justify-between items-center">
               <div>
                 <p className="text-blue-800 dark:text-blue-300 text-xs font-semibold">{T.vacations}</p>
@@ -652,15 +663,14 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
         </div>
       </div>
 
-      {/* ── Panel derecho ── */}
+      {/* Panel derecho */}
       <div className="col-span-1 md:col-span-2 space-y-4">
-        {/* Estado + fichaje */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold flex items-center gap-2 text-base">
               <Clock className="w-5 h-5 text-indigo-500" /> {T.status}
             </h3>
-            {isAdminView && userData.isClockedIn && userData.ultimaUbicacion && (
+            {!isReadOnly && isAdminView && userData.isClockedIn && userData.ultimaUbicacion && (
               <a href={`https://www.google.com/maps?q=${userData.ultimaUbicacion.lat},${userData.ultimaUbicacion.lng}`}
                 target="_blank" rel="noreferrer"
                 className="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-full font-semibold flex items-center gap-1">
@@ -670,7 +680,6 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
           </div>
 
           <div className="bg-gray-50 dark:bg-slate-900/60 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            {/* Estado izquierda */}
             <div>
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full ${userData.isClockedIn ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
@@ -689,14 +698,14 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
                   {clockInFmt && (
                     <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
                       <Timer className="w-3 h-3" /> Entrada: {clockInFmt}
-                      {!isAdminView && (
+                      {!isReadOnly && !isAdminView && (
                         <button onClick={() => setEditClockIn(v => !v)} className="ml-1 text-indigo-500 hover:text-indigo-700">
                           <Edit3 className="w-3 h-3" />
                         </button>
                       )}
                     </div>
                   )}
-                  {editClockIn && !isAdminView && (
+                  {editClockIn && !isReadOnly && !isAdminView && (
                     <div className="flex items-center gap-2 mt-2">
                       <input type="time" value={newClockInTime} onChange={e => setNewClockInTime(e.target.value)}
                         className="border dark:border-slate-600 dark:bg-slate-700 rounded-lg px-2 py-1 text-xs" />
@@ -710,46 +719,43 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
               )}
             </div>
 
-            {/* Botones derecha */}
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              {!userData.isClockedIn ? (
-                <>
-                  {/* ── SELECT PROYECTO ── arreglado: sin overflow, z-index correcto */}
-                  <div className="relative flex items-center bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-xl px-3 py-2.5 w-full sm:w-auto min-w-0">
-                    <Tag className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
-                    <select
-                      disabled={isAdminView}
-                      value={proyecto}
-                      onChange={e => setProyecto(e.target.value)}
-                      className="text-sm bg-transparent outline-none flex-1 text-gray-800 dark:text-gray-100 cursor-pointer min-w-0 max-w-[200px]"
-                      style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+            {!isReadOnly && (
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                {!userData.isClockedIn ? (
+                  <>
+                    <div className="relative flex items-center bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-xl px-3 py-2.5 w-full sm:w-auto min-w-0">
+                      <Tag className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
+                      <select
+                        disabled={isAdminView}
+                        value={proyecto}
+                        onChange={e => setProyecto(e.target.value)}
+                        className="text-sm bg-transparent outline-none flex-1 text-gray-800 dark:text-gray-100 cursor-pointer min-w-0 max-w-[200px] custom-select"
+                      >
+                        {listaProyectos.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <button
+                      onClick={handleClockIn}
+                      disabled={isProcessing || isAdminView}
+                      className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2.5 px-6 rounded-xl transition disabled:opacity-50 shadow-md shadow-indigo-200 dark:shadow-none whitespace-nowrap"
                     >
-                      {listaProyectos.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-gray-400 ml-1 flex-shrink-0 pointer-events-none" />
-                  </div>
+                      {T.clockIn}
+                    </button>
+                  </>
+                ) : (
                   <button
-                    onClick={handleClockIn}
+                    onClick={handleClockOut}
                     disabled={isProcessing || isAdminView}
-                    className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2.5 px-6 rounded-xl transition disabled:opacity-50 shadow-md shadow-indigo-200 dark:shadow-none whitespace-nowrap"
+                    className="w-full sm:w-auto bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-semibold py-2.5 px-8 rounded-xl transition disabled:opacity-50"
                   >
-                    {T.clockIn}
+                    {T.clockOut}
                   </button>
-                </>
-              ) : (
-                <button
-                  onClick={handleClockOut}
-                  disabled={isProcessing || isAdminView}
-                  className="w-full sm:w-auto bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-semibold py-2.5 px-8 rounded-xl transition disabled:opacity-50"
-                >
-                  {T.clockOut}
-                </button>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Métricas */}
         <div className="grid grid-cols-2 gap-4">
           <MetricCard label={T.dailyLimit} value={horasDiarias}   max={8}  danger={horasDiarias > 8}    color="indigo" />
           <MetricCard label={T.weeklyLimit} value={horasSemanales} max={40} danger={horasSemanales > 40} color="green"  />
@@ -759,7 +765,6 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
   );
 }
 
-/* Fila de info en perfil */
 function Row({ icon, label, children }) {
   return (
     <div className="flex justify-between items-center">
@@ -789,66 +794,106 @@ function MetricCard({ label, value, max, danger, color }) {
   );
 }
 
-// ─── TEAM STATUS ──────────────────────────────────────────────────────────────
+// ─── TEAM STATUS (con modal de perfil) ────────────────────────────────────────
 function TeamStatus({ T }) {
   const [team, setTeam] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [config, setConfig] = useState({ bono_hora: 8, limite_dias_vacaciones: 21 });
+
   useEffect(() => {
     const un = onSnapshot(collection(db, 'usuarios'), snap =>
       setTeam(snap.docs.map(d => ({ uid: d.id, ...d.data() })).filter(u => ['user', 'supervisor'].includes(u.role)))
     );
-    return () => un();
+    const unC = onSnapshot(doc(db, 'config', 'general'), snap => {
+      if (snap.exists()) setConfig(snap.data());
+    });
+    return () => { un(); unC(); };
   }, []);
 
+  const handleViewProfile = (user) => {
+    setSelectedUser(user);
+  };
+
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-      <div className="bg-indigo-50 dark:bg-indigo-900/30 p-4 border-b dark:border-slate-700 flex items-center gap-2">
-        <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-        <h3 className="font-bold text-indigo-900 dark:text-indigo-300">{T.teamStatus}</h3>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-gray-50 dark:bg-slate-900/50 text-xs text-gray-400 uppercase border-b dark:border-slate-700">
-            <tr><th className="p-3 pl-5">Empleado</th><th className="p-3 text-center">Estado</th><th className="p-3">{T.projects}</th><th className="p-3">GPS</th></tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
-            {team.map(u => (
-              <tr key={u.uid} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                <td className="p-3 pl-5 font-medium">
-                  <div className="flex items-center gap-2">
-                    <img src={u.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nombre || 'U')}&background=4f46e5&color=fff`}
-                      className="w-7 h-7 rounded-full object-cover" alt="" />
-                    {u.nombre}
-                  </div>
-                </td>
-                <td className="p-3 text-center">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${u.isClockedIn ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-slate-700 text-gray-500'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${u.isClockedIn ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                    {u.isClockedIn ? T.active : T.inactive}
-                  </span>
-                </td>
-                <td className="p-3 text-xs text-gray-500">
-                  {u.isClockedIn && u.proyectoActual
-                    ? <span className="flex items-center gap-1"><FolderKanban className="w-3 h-3 text-indigo-400" />{u.proyectoActual}</span>
-                    : '-'}
-                </td>
-                <td className="p-3">
-                  {u.isClockedIn && u.ultimaUbicacion
-                    ? <a href={`https://www.google.com/maps?q=${u.ultimaUbicacion.lat},${u.ultimaUbicacion.lng}`} target="_blank" rel="noreferrer"
-                        className="text-indigo-500 hover:underline text-xs flex items-center gap-1">
-                        <MapPin className="w-3 h-3" /> Ver
-                      </a>
-                    : '-'}
-                </td>
+    <>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+        <div className="bg-indigo-50 dark:bg-indigo-900/30 p-4 border-b dark:border-slate-700 flex items-center gap-2">
+          <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          <h3 className="font-bold text-indigo-900 dark:text-indigo-300">{T.teamStatus}</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50 dark:bg-slate-900/50 text-xs text-gray-400 uppercase border-b dark:border-slate-700">
+              <tr>
+                <th className="p-3 pl-5">{T.employees}</th>
+                <th className="p-3 text-center">{T.status}</th>
+                <th className="p-3">{T.projects}</th>
+                <th className="p-3">{T.gps}</th>
+                <th className="p-3 text-center">{T.action}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+              {team.map(u => (
+                <tr key={u.uid} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                  <td className="p-3 pl-5 font-medium">
+                    <div className="flex items-center gap-2">
+                      <img src={u.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nombre || 'U')}&background=4f46e5&color=fff`}
+                        className="w-7 h-7 rounded-full object-cover" alt="" />
+                      {u.nombre}
+                    </div>
+                  </td>
+                  <td className="p-3 text-center">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${u.isClockedIn ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-slate-700 text-gray-500'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${u.isClockedIn ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                      {u.isClockedIn ? T.active : T.inactive}
+                    </span>
+                  </td>
+                  <td className="p-3 text-xs text-gray-500">
+                    {u.isClockedIn && u.proyectoActual
+                      ? <span className="flex items-center gap-1"><FolderKanban className="w-3 h-3 text-indigo-400" />{u.proyectoActual}</span>
+                      : '-'}
+                  </td>
+                  <td className="p-3">
+                    {u.isClockedIn && u.ultimaUbicacion
+                      ? <a href={`https://www.google.com/maps?q=${u.ultimaUbicacion.lat},${u.ultimaUbicacion.lng}`} target="_blank" rel="noreferrer"
+                          className="text-indigo-500 hover:underline text-xs flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> {T.view}
+                        </a>
+                      : '-'}
+                  </td>
+                  <td className="p-3 text-center">
+                    <button onClick={() => handleViewProfile(u)}
+                      className="text-indigo-600 hover:text-indigo-800 text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded-full transition">
+                      {T.viewProfile}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+
+      {selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedUser(null)}>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 p-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold">{T.employeeDetails}</h2>
+              <button onClick={() => setSelectedUser(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <UserProfile userData={selectedUser} config={config} T={T} isAdminView={false} showToast={() => {}} isReadOnly={true} />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
-// ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
+// ─── ADMIN DASHBOARD (con modal de perfil) ────────────────────────────────────
 function AdminDashboard({ adminUser, config, T, showToast }) {
   const [users, setUsers]             = useState([]);
   const [showAdd, setShowAdd]         = useState(false);
@@ -857,6 +902,7 @@ function AdminDashboard({ adminUser, config, T, showToast }) {
   const [activeTab, setActiveTab]     = useState('employees');
   const [departments, setDepts]       = useState([]);
   const [newDept, setNewDept]         = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
     const un = onSnapshot(collection(db, 'usuarios'), snap =>
@@ -881,7 +927,6 @@ function AdminDashboard({ adminUser, config, T, showToast }) {
       const secAuth = getAuth(secApp);
       const uc      = await createUserWithEmailAndPassword(secAuth, fd.get('c'), fd.get('p'));
       await signOut(secAuth); await deleteApp(secApp);
-      // Generar ID correlativo
       const nextId = String(users.length + 1).padStart(3, '0');
       await setDoc(doc(db, 'usuarios', uc.user.uid), {
         nombre: fd.get('n'), correo: fd.get('c'),
@@ -927,132 +972,147 @@ function AdminDashboard({ adminUser, config, T, showToast }) {
     { id: 'config',      label: 'Config',      icon: <Settings className="w-4 h-4" /> },
   ];
 
+  const handleViewProfile = (user) => {
+    setSelectedUser(user);
+  };
+
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-black flex items-center gap-2">
-            <Shield className="w-6 h-6 text-indigo-600" /> {T.adminPanel}
-          </h1>
-          <p className="text-xs text-gray-400 mt-0.5">{users.length} empleados · sysTicket Premium</p>
+    <>
+      <div className="space-y-5">
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-black flex items-center gap-2">
+              <Shield className="w-6 h-6 text-indigo-600" /> {T.adminPanel}
+            </h1>
+            <p className="text-xs text-gray-400 mt-0.5">{users.length} empleados · sysTicket Premium</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={exportToCSV}
+              className="flex items-center gap-1.5 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-100 transition">
+              <Download className="w-4 h-4" /> {T.exportCSV}
+            </button>
+            <button onClick={() => setShowAdd(v => !v)}
+              className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-md shadow-indigo-200 dark:shadow-none">
+              <Plus className="w-4 h-4" /> {T.addEmployee}
+            </button>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={exportToCSV}
-            className="flex items-center gap-1.5 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-100 transition">
-            <Download className="w-4 h-4" /> {T.exportCSV}
-          </button>
-          <button onClick={() => setShowAdd(v => !v)}
-            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-md shadow-indigo-200 dark:shadow-none">
-            <Plus className="w-4 h-4" /> {T.addEmployee}
-          </button>
+
+        {showAdd && (
+          <form onSubmit={handleCreateUser}
+            className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rol</label>
+              <select name="r" className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm custom-select">
+                <option value="user">Empleado</option>
+                <option value="supervisor">Supervisor</option>
+                <option value="rh">Recursos Humanos</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Modalidad</label>
+              <select name="modalidad" className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm custom-select">
+                <option value="office">🏢 Oficina</option>
+                <option value="remote">🏠 Teletrabajo</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Departamento</label>
+              <select name="dept" className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm custom-select">
+                <option value="">Sin departamento</option>
+                {departments.map(d => <option key={d.id} value={d.nombre}>{d.nombre}</option>)}
+              </select>
+            </div>
+            {[
+              { name: 'n',  placeholder: 'Nombre completo',    type: 'text'  },
+              { name: 'c',  placeholder: 'Correo electrónico', type: 'email' },
+              { name: 'p',  placeholder: 'Contraseña (mín 6)', type: 'text', minLength: 6 },
+              { name: 'pu', placeholder: 'Puesto / Cargo',     type: 'text'  },
+              { name: 'f',  placeholder: 'Inicio contrato',    type: 'date'  },
+              { name: 'h',  placeholder: 'Horario',            type: 'text', defaultValue: '09:00 - 17:00' },
+            ].map(inp => (
+              <div key={inp.name} className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{inp.placeholder}</label>
+                <input required {...inp}
+                  className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm" />
+              </div>
+            ))}
+            <button type="submit"
+              className="col-span-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm transition">
+              Crear Empleado
+            </button>
+          </form>
+        )}
+
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+          <div className="flex overflow-x-auto border-b dark:border-slate-700">
+            {TABS.map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                    : 'border-transparent text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}>
+                {tab.icon} {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="p-5">
+            {activeTab === 'employees' && (
+              <EmployeeTable users={users} T={T} departments={departments} onViewProfile={handleViewProfile} />
+            )}
+            {activeTab === 'absence' && (
+              <AbsenceModule currentUser={adminUser} T={T} showToast={showToast} adminMode />
+            )}
+            {activeTab === 'departments' && (
+              <DepartmentsTab departments={departments} newDept={newDept} setNewDept={setNewDept} showToast={showToast} />
+            )}
+            {activeTab === 'reports' && (
+              <AdminReports users={users} T={T} />
+            )}
+            {activeTab === 'config' && (
+              <div className="space-y-4 max-w-sm">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">{T.extraHourValue}</label>
+                  <input type="number" value={bonoInput} onChange={e => setBonoInput(e.target.value)}
+                    className="w-full border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">{T.vacDaysLimit}</label>
+                  <input type="number" value={limVacInput} onChange={e => setLimVacInput(e.target.value)}
+                    className="w-full border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl text-sm" />
+                </div>
+                <button onClick={updateConfig}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                  <Save className="w-4 h-4" /> {T.saveChanges}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Form nuevo empleado */}
-      {showAdd && (
-        <form onSubmit={handleCreateUser}
-          className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Rol */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rol</label>
-            <select name="r" className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm">
-              <option value="user">Empleado</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="rh">Recursos Humanos</option>
-            </select>
-          </div>
-          {/* Modalidad trabajo */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Modalidad</label>
-            <select name="modalidad" className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm">
-              <option value="office">🏢 Oficina</option>
-              <option value="remote">🏠 Teletrabajo</option>
-            </select>
-          </div>
-          {/* Departamento */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Departamento</label>
-            <select name="dept" className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm">
-              <option value="">Sin departamento</option>
-              {departments.map(d => <option key={d.id} value={d.nombre}>{d.nombre}</option>)}
-            </select>
-          </div>
-          {/* Inputs texto */}
-          {[
-            { name: 'n',  placeholder: 'Nombre completo',    type: 'text'  },
-            { name: 'c',  placeholder: 'Correo electrónico', type: 'email' },
-            { name: 'p',  placeholder: 'Contraseña (mín 6)', type: 'text', minLength: 6 },
-            { name: 'pu', placeholder: 'Puesto / Cargo',     type: 'text'  },
-            { name: 'f',  placeholder: 'Inicio contrato',    type: 'date'  },
-            { name: 'h',  placeholder: 'Horario',            type: 'text', defaultValue: '09:00 - 17:00' },
-          ].map(inp => (
-            <div key={inp.name} className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{inp.placeholder}</label>
-              <input required {...inp}
-                className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm" />
-            </div>
-          ))}
-          <button type="submit"
-            className="col-span-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm transition">
-            Crear Empleado
-          </button>
-        </form>
-      )}
-
-      {/* Tabs */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-        <div className="flex overflow-x-auto border-b dark:border-slate-700">
-          {TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-                activeTab === tab.id
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                  : 'border-transparent text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}>
-              {tab.icon} {tab.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="p-5">
-          {activeTab === 'employees' && (
-            <EmployeeTable users={users} T={T} departments={departments} />
-          )}
-          {activeTab === 'absence' && (
-            <AbsenceModule currentUser={adminUser} T={T} showToast={showToast} adminMode />
-          )}
-          {activeTab === 'departments' && (
-            <DepartmentsTab departments={departments} newDept={newDept} setNewDept={setNewDept} showToast={showToast} />
-          )}
-          {activeTab === 'reports' && (
-            <AdminReports users={users} T={T} />
-          )}
-          {activeTab === 'config' && (
-            <div className="space-y-4 max-w-sm">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">{T.extraHourValue}</label>
-                <input type="number" value={bonoInput} onChange={e => setBonoInput(e.target.value)}
-                  className="w-full border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">{T.vacDaysLimit}</label>
-                <input type="number" value={limVacInput} onChange={e => setLimVacInput(e.target.value)}
-                  className="w-full border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl text-sm" />
-              </div>
-              <button onClick={updateConfig}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
-                <Save className="w-4 h-4" /> {T.saveChanges}
+      {selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedUser(null)}>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 p-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold">{T.employeeDetails}</h2>
+              <button onClick={() => setSelectedUser(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full">
+                <X className="w-5 h-5" />
               </button>
             </div>
-          )}
+            <div className="p-6">
+              <UserProfile userData={selectedUser} config={config} T={T} isAdminView={true} showToast={showToast} isReadOnly={true} />
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
 
-function EmployeeTable({ users, T, departments }) {
+function EmployeeTable({ users, T, departments, onViewProfile }) {
   const [editUid, setEditUid] = useState(null);
   const [editModalidad, setEditModalidad] = useState('office');
 
@@ -1072,6 +1132,7 @@ function EmployeeTable({ users, T, departments }) {
             <th className="pb-3 text-center">Hrs Sem.</th>
             <th className="pb-3 text-center">Estado</th>
             <th className="pb-3 text-center">GPS</th>
+            <th className="pb-3 text-center">Acción</th>
             <th className="pb-3 text-right">Borrar</th>
           </tr>
         </thead>
@@ -1092,7 +1153,7 @@ function EmployeeTable({ users, T, departments }) {
                 {editUid === u.uid ? (
                   <div className="flex items-center gap-1 justify-center">
                     <select value={editModalidad} onChange={e => setEditModalidad(e.target.value)}
-                      className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 text-xs rounded-lg p-1">
+                      className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 text-xs rounded-lg p-1 custom-select">
                       <option value="office">🏢 Oficina</option>
                       <option value="remote">🏠 Teletrabajo</option>
                     </select>
@@ -1125,6 +1186,12 @@ function EmployeeTable({ users, T, departments }) {
                     </a>
                   : '-'}
               </td>
+              <td className="py-3 text-center">
+                <button onClick={() => onViewProfile(u)}
+                  className="text-indigo-600 hover:text-indigo-800 text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded-full transition">
+                  {T.viewProfile || 'Ver perfil'}
+                </button>
+              </td>
               <td className="py-3 text-right">
                 <button onClick={async () => { if (window.confirm('¿Eliminar empleado?')) await deleteDoc(doc(db, 'usuarios', u.uid)); }}
                   className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition">
@@ -1139,6 +1206,8 @@ function EmployeeTable({ users, T, departments }) {
   );
 }
 
+// ─── COMPONENTES RESTANTES (sin cambios, solo se añade clase custom-select a los selects) ───
+// (Se incluyen aquí de forma resumida, pero en tu código deben estar completos)
 function DepartmentsTab({ departments, newDept, setNewDept, showToast }) {
   return (
     <div className="space-y-4">
@@ -1210,7 +1279,6 @@ function AdminReports({ users, T }) {
   );
 }
 
-// ─── PROYECTOS TAB ────────────────────────────────────────────────────────────
 function ProjectsTab({ currentUser, T, showToast }) {
   const [fichajes, setFichajes] = useState([]);
   const [file, setFile]         = useState(null);
@@ -1295,7 +1363,6 @@ function ProjectsTab({ currentUser, T, showToast }) {
   );
 }
 
-// ─── REPORTS TAB ──────────────────────────────────────────────────────────────
 function ReportsTab({ currentUser, T }) {
   const [fichajes, setFichajes] = useState([]);
   useEffect(() => {
@@ -1352,7 +1419,6 @@ function ReportsTab({ currentUser, T }) {
   );
 }
 
-// ─── MÓDULO AUSENCIAS ─────────────────────────────────────────────────────────
 function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
   const [solicitudes, setSolicitudes] = useState([]);
   const [fInicio, setFInicio]         = useState('');
@@ -1408,7 +1474,6 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
         const uSnap = await getDoc(uRef);
         if (uSnap.exists()) await updateDoc(uRef, { dias_vacaciones_gastados: (uSnap.data().dias_vacaciones_gastados || 0) + dias });
       }
-      // Email al empleado
       const emp = usersMap[eUid];
       if (emp?.correo) {
         const emoji = accion === 'aprobada' ? '✅' : '❌';
@@ -1436,14 +1501,13 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
       )}
       <div className="p-4 sm:p-6 space-y-6">
         <div className={`grid grid-cols-1 ${isWorker && canApprove ? 'lg:grid-cols-2' : ''} gap-6`}>
-          {/* FORM SOLICITUD */}
           {isWorker && (
             <div className="space-y-4">
               <div className="bg-gray-50 dark:bg-slate-900/50 p-5 rounded-xl border border-gray-200 dark:border-slate-700">
                 <h3 className="font-semibold mb-4 flex items-center gap-2"><Plus className="w-4 h-4" /> {T.newRequest}</h3>
                 <form onSubmit={handleSolicitar} className="space-y-3">
                   <select value={tipoAus} onChange={e => setTipoAus(e.target.value)}
-                    className="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm">
+                    className="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm custom-select">
                     <option value="vacaciones">🏖 Vacaciones</option>
                     <option value="baja_medica">🏥 {T.medicalLeave}</option>
                     <option value="cita_medica">🩺 {T.medicalAppt}</option>
@@ -1469,7 +1533,6 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
                   </button>
                 </form>
               </div>
-              {/* Historial */}
               <div className="border dark:border-slate-700 rounded-xl overflow-hidden">
                 <div className="bg-gray-50 dark:bg-slate-900 p-3 border-b dark:border-slate-700 flex items-center gap-2">
                   <ClipboardList className="w-4 h-4 text-gray-400" />
@@ -1492,7 +1555,6 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
             </div>
           )}
 
-          {/* APROBAR */}
           {canApprove && (
             <div className="bg-orange-50 dark:bg-orange-900/10 p-5 rounded-xl border border-orange-200 dark:border-orange-800 max-h-[550px] overflow-y-auto">
               <h3 className="font-semibold text-orange-900 dark:text-orange-300 mb-4 flex items-center gap-2">
@@ -1534,7 +1596,6 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
           )}
         </div>
 
-        {/* Ausencias aprobadas del equipo */}
         <div className="border dark:border-slate-700 rounded-xl overflow-hidden">
           <div className="bg-gray-50 dark:bg-slate-900/50 p-4 border-b dark:border-slate-700">
             <h3 className="font-semibold text-sm">{T.teamApproved}</h3>
@@ -1564,7 +1625,6 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
   );
 }
 
-// ─── CHAT ─────────────────────────────────────────────────────────────────────
 function GlobalChatManager({ currentUser, onClose, T }) {
   const [users, setUsers]             = useState([]);
   const [messages, setMessages]       = useState([]);
@@ -1701,7 +1761,6 @@ function ChatBox({ currentUserId, otherParty, T }) {
         ))}
         <div ref={bottomRef} />
       </div>
-      {/* INPUT separado visualmente del botón flotante */}
       <div className="p-3 bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700">
         {file && (
           <div className="flex items-center gap-2 text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-lg mb-2">
