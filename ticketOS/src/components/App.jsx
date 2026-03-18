@@ -279,7 +279,7 @@ export default function App() {
     </div>
   );
 
-  if (!user) return <LoginScreen />;
+if (!user) return <LoginScreen darkMode={darkMode} setDarkMode={setDarkMode} />;
 
   return (
     <>
@@ -437,48 +437,80 @@ export default function App() {
 }
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
-function LoginScreen() {
-  const [email, setEmail]       = useState('');
+function LoginScreen({ darkMode, setDarkMode }) {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
-  const [busy, setBusy]         = useState(false);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const submit = async (e) => {
-    e.preventDefault(); setError(''); setBusy(true);
-    try { await signInWithEmailAndPassword(auth, email, password); }
-    catch   { setError('Credenciales incorrectas.'); }
-    finally { setBusy(false); }
+    e.preventDefault();
+    setError('');
+    setBusy(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch {
+      setError('Credenciales incorrectas.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-slate-100 p-4">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 p-4 relative transition-colors duration-200">
+      {/* Botón de modo oscuro flotante */}
+      <button
+        onClick={() => {
+          console.log('Botón clickeado. darkMode actual:', darkMode);
+          setDarkMode(prev => !prev);
+        }}
+        className="absolute top-4 right-4 p-2 rounded-full bg-white/80 dark:bg-slate-800/80 shadow-md hover:scale-105 transition z-10"
+        title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+      >
+        {darkMode ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5 text-indigo-600" />}
+      </button>
+
+      <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-slate-700 transition-colors">
         <div className="flex flex-col items-center mb-8">
-          <div className="bg-indigo-600 p-3 rounded-2xl mb-3 shadow-lg shadow-indigo-200">
+          <div className="bg-indigo-600 p-3 rounded-2xl mb-3 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30">
             <Clock className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-black text-gray-800">sysTicket</h1>
-          <p className="text-gray-400 text-sm mt-1">Plataforma de Gestión Empresarial</p>
-          <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold mt-1">PREMIUM</span>
+          <h1 className="text-2xl font-black text-gray-800 dark:text-white">sysTicket</h1>
+          <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Plataforma de Gestión Empresarial</p>
+          <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-bold mt-1">PREMIUM</span>
         </div>
+
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm mb-4 flex items-center gap-2">
+          <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm mb-4 flex items-center gap-2 border border-red-100 dark:border-red-800">
             <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
           </div>
         )}
+
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Correo</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-              className="w-full border border-gray-200 p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Correo</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              className="w-full border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-white p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-colors"
+            />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Contraseña</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-              className="w-full border border-gray-200 p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Contraseña</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              className="w-full border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-white p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-colors"
+            />
           </div>
-          <button disabled={busy}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition disabled:opacity-50 shadow-md shadow-indigo-100">
+          <button
+            disabled={busy}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition disabled:opacity-50 shadow-md shadow-indigo-200 dark:shadow-indigo-900/30"
+          >
             {busy ? 'Iniciando...' : 'Iniciar Sesión'}
           </button>
         </form>
