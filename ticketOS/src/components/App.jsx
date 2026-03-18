@@ -22,6 +22,8 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 // --- DICCIONARIO DE TRADUCCIONES ---
+
+//HOLA
 const t = {
   es: { 
     greeting: 'Hola', logout: 'Cerrar Sesión', adminPanel: 'Panel de Administración', 
