@@ -1,207 +1,502 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, collection, onSnapshot, updateDoc, addDoc, setDoc, deleteDoc, serverTimestamp, getFirestore, query, orderBy } from 'firebase/firestore';
+import { doc, getDoc, collection, onSnapshot, updateDoc, addDoc, setDoc, deleteDoc, serverTimestamp, getFirestore, query, orderBy, where } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { initializeApp, deleteApp } from 'firebase/app';
-import { Clock, LogOut, MessageSquare, Shield, Trash2, Plus, Users, Send, CheckCircle2, AlertCircle, Briefcase, MapPin, Calendar, Check, X, Download, Paperclip, FileText, Map, FolderKanban, Tag, UserCog, ChevronLeft, Sun, Moon, Camera } from 'lucide-react';
+import {
+  Clock, LogOut, MessageSquare, Shield, Trash2, Plus, Users, Send,
+  CheckCircle2, AlertCircle, Briefcase, MapPin, Calendar, Check, X,
+  Download, Paperclip, FileText, Map, FolderKanban, Tag, UserCog,
+  ChevronLeft, Sun, Moon, Camera, Edit3, Save, BarChart2, TrendingUp,
+  Bell, Settings, Building2, ClipboardList, Timer, ChevronDown,
+  AlertTriangle, Info, Home, Wifi
+} from 'lucide-react';
 
-// --- CONFIGURACIÓN DE FIREBASE ---
+// ─── FIREBASE ────────────────────────────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyC2jwIAXbafENVG5SLfKAVry7bYXup0CKg",
   authDomain: "systicket-83627.firebaseapp.com",
   projectId: "systicket-83627",
-   storageBucket: "systicket-83627.firebasestorage.app",
+  storageBucket: "systicket-83627.firebasestorage.app",
   messagingSenderId: "637194630640",
   appId: "1:637194630640:web:72c6777ce8f207bed55935"
 };
-
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// --- DICCIONARIO DE TRADUCCIONES ---
+// ─── EMAILJS CONFIG ───────────────────────────────────────────────────────────
+// 1. Crea cuenta en https://www.emailjs.com (gratis hasta 200 emails/mes)
+// 2. Crea un "Email Service" (Gmail, Outlook…)
+// 3. Crea un "Email Template" con variables: {{to_email}}, {{to_name}}, {{subject}}, {{message}}
+// 4. Rellena tus IDs aquí:
+const EMAILJS_SERVICE_ID  = 'TU_SERVICE_ID';   // ej: 'service_abc123'
+const EMAILJS_TEMPLATE_ID = 'TU_TEMPLATE_ID';  // ej: 'template_xyz789'
+const EMAILJS_PUBLIC_KEY  = 'TU_PUBLIC_KEY';   // ej: 'user_XXXXXXXXXXXXXXX'
 
-//HOLA
-const t = {
-  es: { 
-    greeting: 'Hola', logout: 'Cerrar Sesión', adminPanel: 'Panel de Administración', 
-    teamStatus: 'Estado del Equipo', status: 'Estado Actual', active: 'Trabajando', 
-    inactive: 'Inactivo', clockIn: 'Fichar Entrada', clockOut: 'Terminar Jornada',
-    dailyLimit: 'Límite Diario (8h)', weeklyLimit: 'Total Semanal', 
-    vacations: 'Días Disponibles', bonus: 'Bono Acumulado', absence: 'Gestión de Ausencias'
-  },
-  en: { 
-    greeting: 'Hello', logout: 'Logout', adminPanel: 'Admin Dashboard', 
-    teamStatus: 'Team Status', status: 'Current Status', active: 'Working', 
-    inactive: 'Inactive', clockIn: 'Clock In', clockOut: 'Clock Out',
-    dailyLimit: 'Daily Limit (8h)', weeklyLimit: 'Weekly Total', 
-    vacations: 'Days Available', bonus: 'Earned Bonus', absence: 'Absence Management'
+const sendEmailNotification = async (toEmail, toName, subject, message) => {
+  try {
+    // Carga EmailJS dinámicamente si no está disponible
+    if (!window.emailjs) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      window.emailjs.init(EMAILJS_PUBLIC_KEY);
+    }
+    await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: toEmail,
+      to_name: toName,
+      subject,
+      message,
+    });
+    console.log('✅ Email enviado a', toEmail);
+    return true;
+  } catch (err) {
+    console.error('❌ Error enviando email:', err);
+    return false;
   }
 };
 
+// ─── TRADUCCIONES COMPLETAS ───────────────────────────────────────────────────
+const LANGS = {
+  es: {
+    flag: '🇪🇸', name: 'Español',
+    // Nav
+    greeting: 'Hola', logout: 'Cerrar sesión',
+    // Tabs
+    tabStatus: 'Estado', tabAbsence: 'Ausencias', tabProjects: 'Proyectos',
+    tabReports: 'Informes', tabTeam: 'Equipo',
+    // Status card
+    status: 'Estado Actual', active: 'Trabajando', inactive: 'Inactivo',
+    clockIn: 'Fichar Entrada', clockOut: 'Terminar Jornada',
+    updateEntry: 'Actualizar entrada', save: 'Guardar',
+    // Metrics
+    dailyLimit: 'Jornada Diaria (8h)', weeklyLimit: 'Total Semanal',
+    // Profile
+    vacations: 'Días Disponibles', bonus: 'Bono Acumulado',
+    vacLimit: 'Límite', workMode: 'Modalidad', remote: 'Teletrabajo',
+    office: 'Oficina', schedule: 'Horario', department: 'Departamento',
+    // Absence
+    absence: 'Gestión de Ausencias', newRequest: 'Nueva Solicitud',
+    sendRequest: 'Enviar Solicitud', myHistory: 'Mi Historial',
+    teamApproved: 'Ausencias Aprobadas (Equipo)',
+    pending: 'Pendientes', approve: 'Aprobar', reject: 'Rechazar',
+    medicalLeave: 'Baja Médica', medicalAppt: 'Cita Médica',
+    invalidDates: 'Fechas inválidas', requestSent: 'Solicitud enviada',
+    // Admin
+    adminPanel: 'Panel de Administración', employees: 'Empleados',
+    reports: 'Informes', departments: 'Departamentos',
+    addEmployee: 'Añadir Empleado', exportCSV: 'Exportar CSV',
+    teamStatus: 'Estado del Equipo', configSaved: 'Configuración guardada',
+    extraHourValue: 'Valor Hora Extra (€)', vacDaysLimit: 'Límite días vacaciones',
+    saveChanges: 'Guardar cambios',
+    // Projects
+    hoursProject: 'Horas por Proyecto', upload: 'Subir archivo',
+    // Reports
+    advancedReports: 'Informes Avanzados',
+    // Chat
+    contacts: 'Contactos', message: 'Mensaje...',
+    // Misc
+    emailSent: 'Email enviado', viewMap: 'Ver Mapa',
+    projects: 'Proyectos',
+    listaProyectos: ['Tareas Generales', 'Desarrollo Frontend', 'Desarrollo Backend', 'Soporte Técnico', 'Reuniones de Equipo', 'Formación / I+D', 'Gestión / Administración'],
+    roles: { user: 'Empleado', supervisor: 'Supervisor', rh: 'Recursos Humanos' },
+  },
+  en: {
+    flag: '🇬🇧', name: 'English',
+    greeting: 'Hello', logout: 'Logout',
+    tabStatus: 'Status', tabAbsence: 'Absences', tabProjects: 'Projects',
+    tabReports: 'Reports', tabTeam: 'Team',
+    status: 'Current Status', active: 'Working', inactive: 'Inactive',
+    clockIn: 'Clock In', clockOut: 'Clock Out',
+    updateEntry: 'Update entry', save: 'Save',
+    dailyLimit: 'Daily Shift (8h)', weeklyLimit: 'Weekly Total',
+    vacations: 'Days Available', bonus: 'Earned Bonus',
+    vacLimit: 'Limit', workMode: 'Work mode', remote: 'Remote',
+    office: 'Office', schedule: 'Schedule', department: 'Department',
+    absence: 'Absence Management', newRequest: 'New Request',
+    sendRequest: 'Send Request', myHistory: 'My History',
+    teamApproved: 'Approved Absences (Team)',
+    pending: 'Pending', approve: 'Approve', reject: 'Reject',
+    medicalLeave: 'Medical Leave', medicalAppt: 'Medical Appointment',
+    invalidDates: 'Invalid dates', requestSent: 'Request sent',
+    adminPanel: 'Admin Dashboard', employees: 'Employees',
+    reports: 'Reports', departments: 'Departments',
+    addEmployee: 'Add Employee', exportCSV: 'Export CSV',
+    teamStatus: 'Team Status', configSaved: 'Config saved',
+    extraHourValue: 'Extra Hour Value (€)', vacDaysLimit: 'Vacation days limit',
+    saveChanges: 'Save changes',
+    hoursProject: 'Hours by Project', upload: 'Upload file',
+    advancedReports: 'Advanced Reports',
+    contacts: 'Contacts', message: 'Message...',
+    emailSent: 'Email sent', viewMap: 'View Map',
+    projects: 'Projects',
+    listaProyectos: ['General Tasks', 'Frontend Dev', 'Backend Dev', 'Tech Support', 'Team Meetings', 'Training / R&D', 'Management'],
+    roles: { user: 'Employee', supervisor: 'Supervisor', rh: 'HR' },
+  },
+  fr: {
+    flag: '🇫🇷', name: 'Français',
+    greeting: 'Bonjour', logout: 'Déconnexion',
+    tabStatus: 'Statut', tabAbsence: 'Absences', tabProjects: 'Projets',
+    tabReports: 'Rapports', tabTeam: 'Équipe',
+    status: 'Statut actuel', active: 'En travail', inactive: 'Inactif',
+    clockIn: 'Pointer entrée', clockOut: 'Terminer journée',
+    updateEntry: "Modifier l'heure", save: 'Enregistrer',
+    dailyLimit: 'Journée (8h)', weeklyLimit: 'Total hebdo',
+    vacations: 'Jours disponibles', bonus: 'Bonus accumulé',
+    vacLimit: 'Limite', workMode: 'Mode travail', remote: 'Télétravail',
+    office: 'Bureau', schedule: 'Horaire', department: 'Département',
+    absence: 'Gestion des absences', newRequest: 'Nouvelle demande',
+    sendRequest: 'Envoyer', myHistory: 'Mon historique',
+    teamApproved: 'Absences approuvées (équipe)',
+    pending: 'En attente', approve: 'Approuver', reject: 'Refuser',
+    medicalLeave: 'Congé maladie', medicalAppt: 'Rendez-vous médical',
+    invalidDates: 'Dates invalides', requestSent: 'Demande envoyée',
+    adminPanel: "Panneau d'admin", employees: 'Employés',
+    reports: 'Rapports', departments: 'Départements',
+    addEmployee: 'Ajouter employé', exportCSV: 'Exporter CSV',
+    teamStatus: "État de l'équipe", configSaved: 'Config sauvegardée',
+    extraHourValue: 'Valeur heure supp. (€)', vacDaysLimit: 'Limite jours congés',
+    saveChanges: 'Sauvegarder',
+    hoursProject: 'Heures par projet', upload: 'Télécharger fichier',
+    advancedReports: 'Rapports avancés',
+    contacts: 'Contacts', message: 'Message...',
+    emailSent: 'Email envoyé', viewMap: 'Voir la carte',
+    projects: 'Projets',
+    listaProyectos: ['Tâches générales', 'Dev Frontend', 'Dev Backend', 'Support technique', 'Réunions', 'Formation / R&D', 'Gestion / Admin'],
+    roles: { user: 'Employé', supervisor: 'Superviseur', rh: 'RH' },
+  },
+};
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
 const getMonthsDiff = (startDate) => {
   if (!startDate) return 0;
   const start = new Date(startDate); const now = new Date();
-  let months = (now.getFullYear() - start.getFullYear()) * 12;
-  months -= start.getMonth(); months += now.getMonth();
+  let months = (now.getFullYear() - start.getFullYear()) * 12 - start.getMonth() + now.getMonth();
   return months <= 0 ? 0 : months;
 };
-
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const [year, month, day] = dateString.split('-');
-  return `${day}/${month}/${year}`;
+const formatDate = (ds) => {
+  if (!ds) return '';
+  const [y, m, d] = ds.split('-');
+  return `${d}/${m}/${y}`;
 };
+const calculateDays = (s, e) => Math.ceil(Math.abs(new Date(e) - new Date(s)) / 86400000) + 1;
 
-const calculateDays = (start, end) => {
-  const d1 = new Date(start); const d2 = new Date(end);
-  return Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24)) + 1; 
-};
-
-// --- CONTENEDOR PRINCIPAL ---
-export default function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [lang, setLang] = useState('es');
-  const [config, setConfig] = useState({ bono_hora: 8 });
-
-  useEffect(() => {
-    const unsubConfig = onSnapshot(doc(db, 'config', 'general'), snap => {
-      if(snap.exists()) setConfig(snap.data());
-      else setDoc(doc(db, 'config', 'general'), { bono_hora: 8 });
-    });
-
-    let unsubUser = null;
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        unsubUser = onSnapshot(doc(db, 'usuarios', firebaseUser.uid), (docSnap) => {
-          if (docSnap.exists()) {
-            setUser({ uid: firebaseUser.uid, ...docSnap.data() });
-          } else {
-            const adminData = { role: 'admin', nombre: 'Administrador Principal', correo: firebaseUser.email, empleadoId: 'ADMIN-000' };
-            setDoc(doc(db, 'usuarios', firebaseUser.uid), adminData);
-            setUser({ uid: firebaseUser.uid, ...adminData });
-          }
-          setLoading(false);
-        });
-      } else { 
-        setUser(null); 
-        setLoading(false); 
-        if(unsubUser) unsubUser(); 
-      }
-    });
-    return () => { unsubscribeAuth(); unsubConfig(); if(unsubUser) unsubUser(); };
-  }, []);
-
-  const handleLogout = async () => { try { await signOut(auth); } catch (error) { console.error(error); } };
-
-  if (loading) return <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-slate-900"><Clock className="w-12 h-12 animate-pulse text-indigo-600" /></div>;
-  if (!user) return <LoginScreen />;
-
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function Toast({ message, type = 'success', onDismiss }) {
+  useEffect(() => { const t = setTimeout(onDismiss, 3500); return () => clearTimeout(t); }, [onDismiss]);
+  const c = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-indigo-500', warning: 'bg-amber-500' };
   return (
-    <div className={`${darkMode ? 'dark' : ''}`}>
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-gray-100 font-sans pb-10 transition-colors duration-200">
-        <nav className="bg-indigo-600 dark:bg-indigo-950 text-white p-4 shadow-md flex justify-between items-center sticky top-0 z-40">
-          <div className="flex items-center gap-2 text-xl font-bold"><Clock className="w-6 h-6" /> sysTicket</div>
-          <div className="flex items-center gap-3 sm:gap-5">
-            <button onClick={() => setLang(lang === 'es' ? 'en' : 'es')} className="text-xl hover:scale-110 transition" title="Idioma">{lang === 'es' ? '🇪🇸' : '🇬🇧'}</button>
-            <button onClick={() => setDarkMode(!darkMode)} className="p-2 hover:bg-white/10 rounded-full transition">{darkMode ? <Sun className="w-5 h-5"/> : <Moon className="w-5 h-5"/>}</button>
-            <span className="text-sm opacity-90 hidden sm:flex items-center gap-1 border-l border-white/20 pl-4">
-              {user.role === 'supervisor' && <UserCog className="w-4 h-4 text-indigo-200" />} 
-              {t[lang].greeting}, {user.nombre}
-            </span>
-            <button onClick={handleLogout} className="p-2 hover:bg-red-500 rounded-full transition" title={t[lang].logout}><LogOut className="w-5 h-5" /></button>
-          </div>
-        </nav>
-
-        <main className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
-          {user.role === 'admin' ? (
-            <AdminDashboard adminUser={user} config={config} lang={lang} t={t} />
-          ) : (
-            <>
-              <UserProfile userData={user} config={config} lang={lang} t={t} isAdminView={false} />
-              {user.role === 'supervisor' && <TeamStatus lang={lang} t={t} />}
-              <AbsenceModule currentUser={user} lang={lang} t={t} />
-            </>
-          )}
-        </main>
-
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
-          {chatOpen && (
-            <div className="w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden flex flex-col h-[500px] animate-in slide-in-from-bottom-10">
-              <GlobalChatManager currentUser={user} onClose={() => setChatOpen(false)} />
-            </div>
-          )}
-          <button onClick={() => setChatOpen(!chatOpen)} className="bg-indigo-600 dark:bg-indigo-500 text-white p-4 rounded-full shadow-xl hover:bg-indigo-700 hover:scale-105 transition duration-200">
-            {chatOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
-          </button>
-        </div>
-      </div>
+    <div className={`fixed top-5 right-5 z-[200] flex items-center gap-3 px-4 py-3 rounded-xl text-white shadow-2xl ${c[type]}`}
+      style={{ animation: 'slideInRight 0.3s ease' }}>
+      {type === 'success' && <CheckCircle2 className="w-5 h-5 flex-shrink-0" />}
+      {type === 'error'   && <AlertCircle   className="w-5 h-5 flex-shrink-0" />}
+      {type === 'info'    && <Info           className="w-5 h-5 flex-shrink-0" />}
+      {type === 'warning' && <AlertTriangle  className="w-5 h-5 flex-shrink-0" />}
+      <span className="text-sm font-medium">{message}</span>
+      <button onClick={onDismiss} className="ml-2 opacity-70 hover:opacity-100"><X className="w-4 h-4" /></button>
     </div>
   );
 }
 
-// --- PANTALLA DE LOGIN ---
+// ─── APP ──────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [user, setUser]           = useState(null);
+  const [loading, setLoading]     = useState(true);
+  const [chatOpen, setChatOpen]   = useState(false);
+  // Dark mode: lee de localStorage, aplica al <html> para que Tailwind lo capture
+  const [darkMode, setDarkMode]   = useState(() => localStorage.getItem('st_dark') === 'true');
+  const [lang, setLang]           = useState(() => localStorage.getItem('st_lang') || 'es');
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const [config, setConfig]       = useState({ bono_hora: 8, limite_dias_vacaciones: 21 });
+  const [toast, setToast]         = useState(null);
+  const [notifCount, setNotifCount] = useState(0);
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  const showToast = (message, type = 'success') => setToast({ message, type });
+  const T = LANGS[lang] || LANGS.es;
+
+  // Aplicar dark mode al elemento raíz para que Tailwind lo capture correctamente
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('st_dark', darkMode);
+  }, [darkMode]);
+
+  useEffect(() => { localStorage.setItem('st_lang', lang); }, [lang]);
+
+  useEffect(() => {
+    const unsubConfig = onSnapshot(doc(db, 'config', 'general'), snap => {
+      if (snap.exists()) setConfig(snap.data());
+      else setDoc(doc(db, 'config', 'general'), { bono_hora: 8, limite_dias_vacaciones: 21 });
+    });
+    let unsubUser = null;
+    const unsubAuth = onAuthStateChanged(auth, async (fu) => {
+      if (fu) {
+        unsubUser = onSnapshot(doc(db, 'usuarios', fu.uid), (snap) => {
+          if (snap.exists()) {
+            setUser({ uid: fu.uid, ...snap.data() });
+          } else {
+            const adminData = { role: 'admin', nombre: 'Administrador Principal', correo: fu.email, empleadoId: 'ADMIN-000', modalidadTrabajo: 'office' };
+            setDoc(doc(db, 'usuarios', fu.uid), adminData);
+            setUser({ uid: fu.uid, ...adminData });
+          }
+          setLoading(false);
+        });
+      } else {
+        setUser(null); setLoading(false);
+        if (unsubUser) unsubUser();
+      }
+    });
+    return () => { unsubAuth(); unsubConfig(); if (unsubUser) unsubUser(); };
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const canApprove = ['admin', 'rh', 'supervisor'].includes(user.role);
+    if (!canApprove) return;
+    const unsub = onSnapshot(
+      query(collection(db, 'vacaciones'), where('estado', '==', 'pendiente')),
+      snap => setNotifCount(snap.size)
+    );
+    return () => unsub();
+  }, [user]);
+
+  const handleLogout = async () => { try { await signOut(auth); } catch (e) {} };
+
+  if (loading) return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-slate-900">
+      <div className="flex flex-col items-center gap-3">
+        <Clock className="w-12 h-12 animate-spin text-indigo-600" />
+        <p className="text-gray-400 text-sm">sysTicket</p>
+      </div>
+    </div>
+  );
+
+  if (!user) return <LoginScreen />;
+
+  return (
+    <>
+      <style>{`
+        @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        select option { background: white; color: #1e293b; }
+        .dark select option { background: #1e293b; color: #f1f5f9; }
+      `}</style>
+
+      {toast && <Toast message={toast.message} type={toast.type} onDismiss={() => setToast(null)} />}
+
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-gray-100 font-sans transition-colors duration-200">
+
+        {/* ── NAV ── */}
+        <nav className="bg-indigo-600 dark:bg-indigo-950 text-white shadow-md flex justify-between items-center sticky top-0 z-40 px-4 h-14">
+          <div className="flex items-center gap-2 font-bold text-lg">
+            <Clock className="w-5 h-5" /> sysTicket
+            <span className="hidden sm:inline text-[9px] font-normal bg-white/20 px-1.5 py-0.5 rounded-full">PREMIUM</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {/* Selector idioma */}
+            <div className="relative">
+              <button
+                onClick={() => setShowLangMenu(v => !v)}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-white/15 transition text-base leading-none"
+              >
+                <span style={{ fontSize: '18px', lineHeight: 1 }}>{LANGS[lang].flag}</span>
+                <ChevronDown className="w-3 h-3 opacity-60" />
+              </button>
+              {showLangMenu && (
+                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-gray-100 dark:border-slate-700 z-50 overflow-hidden min-w-[140px]">
+                  {Object.entries(LANGS).map(([code, data]) => (
+                    <button
+                      key={code}
+                      onClick={() => { setLang(code); setShowLangMenu(false); }}
+                      className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-800 dark:text-gray-200 transition ${lang === code ? 'font-bold bg-indigo-50 dark:bg-indigo-900/40' : ''}`}
+                    >
+                      <span style={{ fontSize: '18px', lineHeight: 1 }}>{data.flag}</span>
+                      {data.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Dark mode toggle */}
+            <button
+              onClick={() => setDarkMode(d => !d)}
+              className="p-2 rounded-full hover:bg-white/15 transition"
+              title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+            >
+              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+
+            {/* Badge notificaciones */}
+            {['admin', 'rh', 'supervisor'].includes(user.role) && (
+              <button onClick={() => setActiveTab('absence')} className="relative p-2 rounded-full hover:bg-white/15 transition">
+                <Bell className="w-5 h-5" />
+                {notifCount > 0 && (
+                  <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 rounded-full text-[9px] font-bold flex items-center justify-center">{notifCount}</span>
+                )}
+              </button>
+            )}
+
+            <span className="hidden sm:flex items-center gap-1 text-sm opacity-90 border-l border-white/20 pl-3 ml-1">
+              {user.role === 'supervisor' && <UserCog className="w-4 h-4 text-indigo-200" />}
+              {T.greeting}, {user.nombre?.split(' ')[0]}
+            </span>
+            <button onClick={handleLogout} className="p-2 rounded-full hover:bg-red-500 transition ml-1" title={T.logout}>
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
+        </nav>
+
+        {/* ── TABS (solo no-admin) ── */}
+        {user.role !== 'admin' && (
+          <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-14 z-30">
+            <div className="max-w-6xl mx-auto flex overflow-x-auto scrollbar-none">
+              {[
+                { id: 'dashboard', label: T.tabStatus,   icon: <Clock className="w-4 h-4" /> },
+                { id: 'absence',   label: T.tabAbsence,  icon: <Calendar className="w-4 h-4" /> },
+                { id: 'projects',  label: T.tabProjects, icon: <FolderKanban className="w-4 h-4" /> },
+                { id: 'reports',   label: T.tabReports,  icon: <BarChart2 className="w-4 h-4" /> },
+                ...(user.role === 'supervisor'
+                  ? [{ id: 'team', label: T.tabTeam, icon: <Users className="w-4 h-4" /> }]
+                  : []),
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                >
+                  {tab.icon} {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── MAIN ── */}
+        <main className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6 pb-24">
+          {user.role === 'admin' ? (
+            <AdminDashboard adminUser={user} config={config} T={T} showToast={showToast} />
+          ) : (
+            <>
+              {activeTab === 'dashboard' && <UserProfile userData={user} config={config} T={T} isAdminView={false} showToast={showToast} />}
+              {activeTab === 'absence'   && <AbsenceModule currentUser={user} T={T} showToast={showToast} />}
+              {activeTab === 'projects'  && <ProjectsTab currentUser={user} T={T} showToast={showToast} />}
+              {activeTab === 'reports'   && <ReportsTab currentUser={user} T={T} />}
+              {activeTab === 'team' && user.role === 'supervisor' && <TeamStatus T={T} />}
+            </>
+          )}
+        </main>
+
+        {/* ── CHAT FLOTANTE ── */}
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+          {chatOpen && (
+            <div
+              className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden flex flex-col"
+              style={{ width: '340px', height: '500px' }}
+            >
+              <GlobalChatManager currentUser={user} onClose={() => setChatOpen(false)} T={T} />
+            </div>
+          )}
+          <button
+            onClick={() => setChatOpen(v => !v)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-xl hover:scale-105 transition-transform"
+          >
+            {chatOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
 function LoginScreen() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [error, setError]       = useState('');
+  const [busy, setBusy]         = useState(false);
 
   const submit = async (e) => {
-    e.preventDefault(); setError(''); setIsLoggingIn(true);
-    try { await signInWithEmailAndPassword(auth, email, password); } 
-    catch (err) { setError('Credenciales incorrectas.'); } 
-    finally { setIsLoggingIn(false); }
+    e.preventDefault(); setError(''); setBusy(true);
+    try { await signInWithEmailAndPassword(auth, email, password); }
+    catch   { setError('Credenciales incorrectas.'); }
+    finally { setBusy(false); }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-slate-100 p-4">
+      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
         <div className="flex flex-col items-center mb-8">
-          <div className="bg-indigo-100 p-3 rounded-full mb-2"><Clock className="w-8 h-8 text-indigo-600" /></div>
-          <h1 className="text-2xl font-bold text-gray-800">sysTicket</h1>
-          <p className="text-gray-500 text-sm mt-2">Plataforma de Fichado</p>
+          <div className="bg-indigo-600 p-3 rounded-2xl mb-3 shadow-lg shadow-indigo-200">
+            <Clock className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-2xl font-black text-gray-800">sysTicket</h1>
+          <p className="text-gray-400 text-sm mt-1">Plataforma de Gestión Empresarial</p>
+          <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold mt-1">PREMIUM</span>
         </div>
-        {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">{error}</div>}
+        {error && (
+          <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm mb-4 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+          </div>
+        )}
         <form onSubmit={submit} className="space-y-4">
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required /></div>
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required /></div>
-          <button disabled={isLoggingIn} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg transition disabled:bg-indigo-400">{isLoggingIn ? 'Iniciando...' : 'Iniciar Sesión'}</button>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Correo</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+              className="w-full border border-gray-200 p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Contraseña</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
+              className="w-full border border-gray-200 p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+          <button disabled={busy}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition disabled:opacity-50 shadow-md shadow-indigo-100">
+            {busy ? 'Iniciando...' : 'Iniciar Sesión'}
+          </button>
         </form>
       </div>
     </div>
   );
 }
 
-// --- PERFIL DE USUARIO ---
-function UserProfile({ userData, config, lang, t, isAdminView = false }) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [proyectoSeleccionado, setProyectoSeleccionado] = useState('Tareas Generales');
-  const [isUploadingPic, setIsUploadingPic] = useState(false);
-  const listaProyectos = ['Tareas Generales', 'Desarrollo Frontend', 'Desarrollo Backend', 'Soporte Técnico', 'Reuniones de Equipo', 'Formación / I+D'];
+// ─── PERFIL DE USUARIO ────────────────────────────────────────────────────────
+function UserProfile({ userData, config, T, isAdminView = false, showToast }) {
+  const [isProcessing, setIsProcessing]         = useState(false);
+  const [proyecto, setProyecto]                 = useState(userData.proyectoActual || (T.listaProyectos[0]));
+  const [isUploadingPic, setIsUploadingPic]     = useState(false);
+  const [editClockIn, setEditClockIn]           = useState(false);
+  const [newClockInTime, setNewClockInTime]     = useState('');
 
-  const getWorkLocation = (id) => {
-    if (!id) return 'No definido';
-    if (id.startsWith('A003')) return 'Teletrabajo';
-    if (id.startsWith('B003')) return 'Oficina';
-    return 'No definido';
-  };
+  // Sync lista proyectos si cambia el idioma
+  const listaProyectos = T.listaProyectos;
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
-    if(!file) return;
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { showToast('Máx 5 MB', 'error'); return; }
     setIsUploadingPic(true);
     try {
-      const fileRef = ref(storage, `perfiles/${userData.uid}_${Date.now()}`);
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
+      const fRef = ref(storage, `perfiles/${userData.uid}_${Date.now()}`);
+      await uploadBytes(fRef, file);
+      const url = await getDownloadURL(fRef);
       await updateDoc(doc(db, 'usuarios', userData.uid), { photoURL: url });
-    } catch(err) { alert("Error al subir imagen"); }
+      showToast('Foto actualizada ✓');
+    } catch { showToast('Error al subir imagen', 'error'); }
     setIsUploadingPic(false);
   };
 
@@ -209,166 +504,1059 @@ function UserProfile({ userData, config, lang, t, isAdminView = false }) {
     setIsProcessing(true);
     let ubicacion = null;
     try {
-      if ("geolocation" in navigator) {
-        ubicacion = await new Promise((resolve) => {
+      if ('geolocation' in navigator) {
+        ubicacion = await new Promise(resolve => {
           navigator.geolocation.getCurrentPosition(
-            pos => resolve({ lat: position.coords.latitude, lng: position.coords.longitude }),
-            () => resolve(null), { timeout: 10000 }
+            p => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+            () => resolve(null), { timeout: 8000 }
           );
         });
       }
-      const updateData = { isClockedIn: true, clockInTime: new Date().toISOString(), proyectoActual: proyectoSeleccionado };
-      if (ubicacion) updateData.ultimaUbicacion = ubicacion;
-      await updateDoc(doc(db, 'usuarios', userData.uid), updateData);
-    } catch (error) { console.error(error); alert("Hubo un error al fichar."); }
+      await updateDoc(doc(db, 'usuarios', userData.uid), {
+        isClockedIn: true,
+        clockInTime: new Date().toISOString(),
+        proyectoActual: proyecto,
+        ...(ubicacion ? { ultimaUbicacion: ubicacion } : {}),
+      });
+      await addDoc(collection(db, 'fichajes'), {
+        uid: userData.uid, nombre: userData.nombre,
+        entrada: new Date().toISOString(), salida: null,
+        proyecto, ubicacion,
+        fecha: new Date().toISOString().split('T')[0],
+      });
+      showToast(T.clockIn + ' ✓');
+    } catch (err) { console.error(err); showToast('Error al fichar', 'error'); }
     setIsProcessing(false);
   };
 
   const handleClockOut = async () => {
     setIsProcessing(true);
     try {
-      const inTime = new Date(userData.clockInTime);
+      const inTime  = new Date(userData.clockInTime);
       const outTime = new Date();
-      const hoursWorkedSession = (outTime - inTime) / (1000 * 60 * 60); 
-      
-      const todayString = outTime.toISOString().split('T')[0];
-      let newHorasHoy = hoursWorkedSession;
-      if (userData.fecha_ultimo_fichaje === todayString) {
-         newHorasHoy += (userData.horas_hoy || 0);
-      }
-      
-      const newTotalHours = (userData.total_horas_semana || 0) + hoursWorkedSession;
-      
-      await updateDoc(doc(db, 'usuarios', userData.uid), { 
-        isClockedIn: false, clockInTime: null, 
-        total_horas_semana: newTotalHours,
-        horas_hoy: newHorasHoy, fecha_ultimo_fichaje: todayString,
-        ultimaUbicacion: null, proyectoActual: null 
-      });
+      const hrs     = (outTime - inTime) / 3600000;
+      const today   = outTime.toISOString().split('T')[0];
+      const horasHoy = userData.fecha_ultimo_fichaje === today
+        ? (userData.horas_hoy || 0) + hrs : hrs;
+      const totalSem = (userData.total_horas_semana || 0) + hrs;
 
-      if (newHorasHoy > 8) {
-         alert(`⚠️ ¡Atención! Has superado las 8 horas diarias (${newHorasHoy.toFixed(1)}h hoy). Notificado a RH.`);
-      }
-    } catch (error) {}
+      await updateDoc(doc(db, 'usuarios', userData.uid), {
+        isClockedIn: false, clockInTime: null,
+        total_horas_semana: totalSem,
+        horas_hoy: horasHoy, fecha_ultimo_fichaje: today,
+        ultimaUbicacion: null, proyectoActual: null,
+      });
+      if (horasHoy > 8) showToast(`⚠️ ${horasHoy.toFixed(1)}h hoy — superaste las 8h`, 'warning');
+      else              showToast(`${T.clockOut} — ${hrs.toFixed(1)}h`);
+    } catch (err) { console.error(err); showToast('Error', 'error'); }
     setIsProcessing(false);
   };
 
-  const horasSemanales = userData.total_horas_semana || 0;
-  const horasHoy = userData.horas_hoy || 0;
-  const sameDay = userData.fecha_ultimo_fichaje === new Date().toISOString().split('T')[0];
-  const horasDiariasReales = sameDay ? horasHoy : 0;
+  const handleUpdateClockIn = async () => {
+    if (!newClockInTime) return;
+    const today = new Date().toISOString().split('T')[0];
+    await updateDoc(doc(db, 'usuarios', userData.uid), {
+      clockInTime: new Date(`${today}T${newClockInTime}`).toISOString(),
+    });
+    showToast(T.updateEntry + ' ✓');
+    setEditClockIn(false);
+  };
 
-  const mesesTrabajados = getMonthsDiff(userData.fecha_inicio_contrato);
-  const diasGenerados = mesesTrabajados * 2;
-  const diasGastados = userData.dias_vacaciones_gastados || 0;
-  
-  let diasDisponibles = diasGenerados - diasGastados;
-  let bonoEuros = 0;
-  if (diasDisponibles > 21) {
-    const diasSobrantes = diasDisponibles - 21;
-    diasDisponibles = 21;
-    bonoEuros = diasSobrantes * 8 * (config?.bono_hora || 8);
-  }
+  // Cálculos
+  const horasSemanales   = userData.total_horas_semana || 0;
+  const today            = new Date().toISOString().split('T')[0];
+  const horasDiarias     = userData.fecha_ultimo_fichaje === today ? (userData.horas_hoy || 0) : 0;
+  const limiteVac        = config?.limite_dias_vacaciones || 21;
+  const meses            = getMonthsDiff(userData.fecha_inicio_contrato);
+  const diasGen          = meses * 2;
+  const diasGast         = userData.dias_vacaciones_gastados || 0;
+  const diasDisp         = Math.min(diasGen - diasGast, limiteVac);
+  const diasSobrantes    = (diasGen - diasGast) - limiteVac;
+  const bonoEuros        = diasSobrantes > 0 ? diasSobrantes * 8 * (config?.bono_hora || 8) : 0;
+  const clockInFmt       = userData.clockInTime
+    ? new Date(userData.clockInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null;
+  const modalidad        = userData.modalidadTrabajo === 'remote' ? T.remote : T.office;
+  const modalidadColor   = userData.modalidadTrabajo === 'remote'
+    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+    : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="col-span-1 space-y-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 flex flex-col items-center text-center border border-gray-100 dark:border-slate-700 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-24 bg-indigo-50 dark:bg-indigo-900/30"></div>
-          
-          <label className={`relative group cursor-pointer z-10 ${isUploadingPic ? 'opacity-50' : ''}`}>
-            <img src={userData.photoURL || `https://ui-avatars.com/api/?name=${userData.nombre}&background=4f46e5&color=fff&size=150`} alt="Perfil" className="w-24 h-24 rounded-full mb-4 border-4 border-white dark:border-slate-800 shadow-md object-cover bg-white" />
-            {!isAdminView && (
-              <div className="absolute inset-0 mb-4 rounded-full bg-black/60 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="w-6 h-6"/>
+      {/* ── Tarjeta perfil ── */}
+      <div className="col-span-1">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+          {/* Banner */}
+          <div className="h-20 bg-gradient-to-br from-indigo-500 to-indigo-700" />
+          <div className="px-6 pb-6 -mt-10 flex flex-col items-center text-center">
+            {/* Avatar */}
+            <label className={`relative group cursor-pointer ${isUploadingPic ? 'opacity-50 cursor-wait' : ''}`}>
+              <img
+                src={userData.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.nombre || 'U')}&background=4f46e5&color=fff&size=150`}
+                alt="Avatar"
+                className="w-20 h-20 rounded-full border-4 border-white dark:border-slate-800 shadow-lg object-cover bg-white"
+              />
+              {!isAdminView && (
+                <div className="absolute inset-0 rounded-full bg-black/60 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition gap-0.5">
+                  <Camera className="w-5 h-5" />
+                  <span className="text-[9px] font-bold">{isUploadingPic ? '...' : 'Cambiar'}</span>
+                </div>
+              )}
+              {!isAdminView && <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploadingPic} />}
+            </label>
+
+            <h2 className="text-lg font-bold mt-3 flex items-center gap-1">
+              {userData.nombre}
+              {userData.role === 'supervisor' && <UserCog className="w-4 h-4 text-indigo-500" />}
+            </h2>
+            <p className="text-gray-400 text-sm">{userData.puesto || 'Empleado'}</p>
+            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full mt-1 ${
+              userData.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
+              : userData.role === 'supervisor' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300'
+              : userData.role === 'rh' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+              : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-300'
+            }`}>{userData.role}</span>
+
+            {/* Info */}
+            <div className="w-full mt-4 space-y-2 text-sm border-t dark:border-slate-700 pt-4">
+              <Row icon={<Shield className="w-3.5 h-3.5" />} label="ID">
+                <span className="font-mono text-xs bg-gray-50 dark:bg-slate-700 px-2 py-0.5 rounded">{userData.empleadoId}</span>
+              </Row>
+              <Row icon={<MapPin className="w-3.5 h-3.5" />} label={T.workMode}>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${modalidadColor}`}>{modalidad}</span>
+              </Row>
+              <Row icon={<Briefcase className="w-3.5 h-3.5" />} label={T.schedule}>
+                <span className="text-xs">{userData.horario_definido}</span>
+              </Row>
+              {userData.departamento && (
+                <Row icon={<Building2 className="w-3.5 h-3.5" />} label={T.department}>
+                  <span className="text-xs">{userData.departamento}</span>
+                </Row>
+              )}
+            </div>
+
+            {/* Vacaciones */}
+            <div className="w-full mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-3 flex justify-between items-center">
+              <div>
+                <p className="text-blue-800 dark:text-blue-300 text-xs font-semibold">{T.vacations}</p>
+                <p className="text-[10px] text-blue-400">{T.vacLimit}: {limiteVac}d</p>
+              </div>
+              <span className={`text-2xl font-black ${diasDisp <= 3 ? 'text-red-500' : 'text-blue-600 dark:text-blue-400'}`}>{diasDisp}</span>
+            </div>
+            {bonoEuros > 0 && (
+              <div className="w-full mt-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl p-3 flex justify-between items-center">
+                <span className="text-emerald-800 dark:text-emerald-300 text-xs font-semibold">{T.bonus}</span>
+                <span className="text-lg font-black text-emerald-600">+{bonoEuros.toFixed(2)}€</span>
               </div>
             )}
-            {!isAdminView && <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploadingPic}/>}
-          </label>
-          
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            {userData.nombre} {userData.role === 'supervisor' && <UserCog className="w-5 h-5 text-indigo-600 dark:text-indigo-400" title="Supervisor"/>}
-          </h2>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">{userData.puesto || 'Empleado'}</p>
-          
-          <div className="w-full space-y-3 text-sm text-left mt-2 border-t dark:border-slate-700 pt-4">
-            <div className="flex justify-between"><span className="text-gray-500 flex items-center gap-2"><Shield className="w-4 h-4" /> ID</span> <span className="font-mono">{userData.empleadoId}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500 flex items-center gap-2"><MapPin className="w-4 h-4" /> Modalidad</span> <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${getWorkLocation(userData.empleadoId) === 'Teletrabajo' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'}`}>{getWorkLocation(userData.empleadoId)}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500 flex items-center gap-2"><Briefcase className="w-4 h-4" /> Horario</span> <span>{userData.horario_definido}</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Panel derecho ── */}
+      <div className="col-span-1 md:col-span-2 space-y-4">
+        {/* Estado + fichaje */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold flex items-center gap-2 text-base">
+              <Clock className="w-5 h-5 text-indigo-500" /> {T.status}
+            </h3>
+            {isAdminView && userData.isClockedIn && userData.ultimaUbicacion && (
+              <a href={`https://www.google.com/maps?q=${userData.ultimaUbicacion.lat},${userData.ultimaUbicacion.lng}`}
+                target="_blank" rel="noreferrer"
+                className="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-full font-semibold flex items-center gap-1">
+                <Map className="w-3 h-3" /> {T.viewMap}
+              </a>
+            )}
           </div>
 
-          <div className="w-full mt-4 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800 flex justify-between items-center">
-            <span className="text-blue-800 dark:text-blue-300 text-sm font-semibold">{t[lang].vacations}</span>
-            <span className="text-xl font-black text-blue-600 dark:text-blue-400">{diasDisponibles}</span>
+          <div className="bg-gray-50 dark:bg-slate-900/60 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            {/* Estado izquierda */}
+            <div>
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${userData.isClockedIn ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                <span className={`font-bold text-lg ${userData.isClockedIn ? 'text-green-600' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {userData.isClockedIn ? T.active : T.inactive}
+                </span>
+              </div>
+
+              {userData.isClockedIn && (
+                <div className="mt-2 space-y-1">
+                  {userData.proyectoActual && (
+                    <div className="inline-flex items-center gap-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs font-semibold px-2.5 py-1 rounded-md">
+                      <FolderKanban className="w-3.5 h-3.5" /> {userData.proyectoActual}
+                    </div>
+                  )}
+                  {clockInFmt && (
+                    <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                      <Timer className="w-3 h-3" /> Entrada: {clockInFmt}
+                      {!isAdminView && (
+                        <button onClick={() => setEditClockIn(v => !v)} className="ml-1 text-indigo-500 hover:text-indigo-700">
+                          <Edit3 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {editClockIn && !isAdminView && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <input type="time" value={newClockInTime} onChange={e => setNewClockInTime(e.target.value)}
+                        className="border dark:border-slate-600 dark:bg-slate-700 rounded-lg px-2 py-1 text-xs" />
+                      <button onClick={handleUpdateClockIn}
+                        className="text-xs bg-indigo-600 text-white px-2 py-1 rounded-lg flex items-center gap-1">
+                        <Save className="w-3 h-3" /> {T.save}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Botones derecha */}
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              {!userData.isClockedIn ? (
+                <>
+                  {/* ── SELECT PROYECTO ── arreglado: sin overflow, z-index correcto */}
+                  <div className="relative flex items-center bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-xl px-3 py-2.5 w-full sm:w-auto min-w-0">
+                    <Tag className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
+                    <select
+                      disabled={isAdminView}
+                      value={proyecto}
+                      onChange={e => setProyecto(e.target.value)}
+                      className="text-sm bg-transparent outline-none flex-1 text-gray-800 dark:text-gray-100 cursor-pointer min-w-0 max-w-[200px]"
+                      style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+                    >
+                      {listaProyectos.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-gray-400 ml-1 flex-shrink-0 pointer-events-none" />
+                  </div>
+                  <button
+                    onClick={handleClockIn}
+                    disabled={isProcessing || isAdminView}
+                    className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2.5 px-6 rounded-xl transition disabled:opacity-50 shadow-md shadow-indigo-200 dark:shadow-none whitespace-nowrap"
+                  >
+                    {T.clockIn}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleClockOut}
+                  disabled={isProcessing || isAdminView}
+                  className="w-full sm:w-auto bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-semibold py-2.5 px-8 rounded-xl transition disabled:opacity-50"
+                >
+                  {T.clockOut}
+                </button>
+              )}
+            </div>
           </div>
-          {bonoEuros > 0 && (
-            <div className="w-full mt-2 bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800 flex justify-between items-center">
-              <span className="text-emerald-800 dark:text-emerald-300 text-sm font-semibold">{t[lang].bonus}</span>
-              <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">+{bonoEuros.toFixed(2)}€</span>
+        </div>
+
+        {/* Métricas */}
+        <div className="grid grid-cols-2 gap-4">
+          <MetricCard label={T.dailyLimit} value={horasDiarias}   max={8}  danger={horasDiarias > 8}    color="indigo" />
+          <MetricCard label={T.weeklyLimit} value={horasSemanales} max={40} danger={horasSemanales > 40} color="green"  />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Fila de info en perfil */
+function Row({ icon, label, children }) {
+  return (
+    <div className="flex justify-between items-center">
+      <span className="text-gray-400 flex items-center gap-1.5">{icon} {label}</span>
+      {children}
+    </div>
+  );
+}
+
+function MetricCard({ label, value, max, danger, color }) {
+  const pct = Math.min((value / max) * 100, 100);
+  const barColor = {
+    indigo: danger ? 'bg-red-500' : 'bg-indigo-500',
+    green:  danger ? 'bg-orange-500' : 'bg-green-500',
+  }[color];
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-5">
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{label}</p>
+      <div className="flex items-baseline gap-1 mb-3">
+        <span className={`text-4xl font-black ${danger ? 'text-red-500' : 'text-gray-800 dark:text-white'}`}>{value.toFixed(1)}</span>
+        <span className="text-gray-400 text-sm">/ {max}h</span>
+      </div>
+      <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+        <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── TEAM STATUS ──────────────────────────────────────────────────────────────
+function TeamStatus({ T }) {
+  const [team, setTeam] = useState([]);
+  useEffect(() => {
+    const un = onSnapshot(collection(db, 'usuarios'), snap =>
+      setTeam(snap.docs.map(d => ({ uid: d.id, ...d.data() })).filter(u => ['user', 'supervisor'].includes(u.role)))
+    );
+    return () => un();
+  }, []);
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+      <div className="bg-indigo-50 dark:bg-indigo-900/30 p-4 border-b dark:border-slate-700 flex items-center gap-2">
+        <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+        <h3 className="font-bold text-indigo-900 dark:text-indigo-300">{T.teamStatus}</h3>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-gray-50 dark:bg-slate-900/50 text-xs text-gray-400 uppercase border-b dark:border-slate-700">
+            <tr><th className="p-3 pl-5">Empleado</th><th className="p-3 text-center">Estado</th><th className="p-3">{T.projects}</th><th className="p-3">GPS</th></tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+            {team.map(u => (
+              <tr key={u.uid} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                <td className="p-3 pl-5 font-medium">
+                  <div className="flex items-center gap-2">
+                    <img src={u.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nombre || 'U')}&background=4f46e5&color=fff`}
+                      className="w-7 h-7 rounded-full object-cover" alt="" />
+                    {u.nombre}
+                  </div>
+                </td>
+                <td className="p-3 text-center">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${u.isClockedIn ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-slate-700 text-gray-500'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${u.isClockedIn ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                    {u.isClockedIn ? T.active : T.inactive}
+                  </span>
+                </td>
+                <td className="p-3 text-xs text-gray-500">
+                  {u.isClockedIn && u.proyectoActual
+                    ? <span className="flex items-center gap-1"><FolderKanban className="w-3 h-3 text-indigo-400" />{u.proyectoActual}</span>
+                    : '-'}
+                </td>
+                <td className="p-3">
+                  {u.isClockedIn && u.ultimaUbicacion
+                    ? <a href={`https://www.google.com/maps?q=${u.ultimaUbicacion.lat},${u.ultimaUbicacion.lng}`} target="_blank" rel="noreferrer"
+                        className="text-indigo-500 hover:underline text-xs flex items-center gap-1">
+                        <MapPin className="w-3 h-3" /> Ver
+                      </a>
+                    : '-'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
+function AdminDashboard({ adminUser, config, T, showToast }) {
+  const [users, setUsers]             = useState([]);
+  const [showAdd, setShowAdd]         = useState(false);
+  const [bonoInput, setBonoInput]     = useState(config?.bono_hora || 8);
+  const [limVacInput, setLimVacInput] = useState(config?.limite_dias_vacaciones || 21);
+  const [activeTab, setActiveTab]     = useState('employees');
+  const [departments, setDepts]       = useState([]);
+  const [newDept, setNewDept]         = useState('');
+
+  useEffect(() => {
+    const un = onSnapshot(collection(db, 'usuarios'), snap =>
+      setUsers(snap.docs.map(d => ({ uid: d.id, ...d.data() })).filter(u => u.uid !== adminUser.uid && u.role !== 'admin'))
+    );
+    const unD = onSnapshot(collection(db, 'departamentos'), snap =>
+      setDepts(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    );
+    return () => { un(); unD(); };
+  }, [adminUser.uid]);
+
+  const updateConfig = async () => {
+    await updateDoc(doc(db, 'config', 'general'), { bono_hora: Number(bonoInput), limite_dias_vacaciones: Number(limVacInput) });
+    showToast(T.configSaved);
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    try {
+      const secApp  = initializeApp(firebaseConfig, `Sec_${Date.now()}`);
+      const secAuth = getAuth(secApp);
+      const uc      = await createUserWithEmailAndPassword(secAuth, fd.get('c'), fd.get('p'));
+      await signOut(secAuth); await deleteApp(secApp);
+      // Generar ID correlativo
+      const nextId = String(users.length + 1).padStart(3, '0');
+      await setDoc(doc(db, 'usuarios', uc.user.uid), {
+        nombre: fd.get('n'), correo: fd.get('c'),
+        puesto: fd.get('pu'), empleadoId: nextId,
+        horario_definido: fd.get('h'),
+        fecha_inicio_contrato: fd.get('f'),
+        role: fd.get('r'),
+        departamento: fd.get('dept') || '',
+        modalidadTrabajo: fd.get('modalidad') || 'office',
+        dias_vacaciones_gastados: 0, total_horas_semana: 0,
+        isClockedIn: false, clockInTime: null,
+        ultimaUbicacion: null, proyectoActual: null,
+        horas_hoy: 0, fecha_ultimo_fichaje: '',
+      });
+      setShowAdd(false);
+      showToast('Empleado creado ✓');
+    } catch (err) { showToast('Error: ' + err.message, 'error'); }
+  };
+
+  const exportToCSV = () => {
+    const head = ['ID', 'Nombre', 'Correo', 'Rol', 'Puesto', 'Depto', 'Modalidad', 'Hrs Sem.', 'Vac. Disp.', 'Estado', 'Proyecto'];
+    const rows = users.map(u => {
+      const dDisp = (getMonthsDiff(u.fecha_inicio_contrato) * 2) - (u.dias_vacaciones_gastados || 0);
+      return [
+        `"${u.empleadoId}"`, `"${u.nombre}"`, `"${u.correo}"`, `"${u.role}"`,
+        `"${u.puesto}"`, `"${u.departamento || '-'}"`, `"${u.modalidadTrabajo || '-'}"`,
+        (u.total_horas_semana || 0).toFixed(1), dDisp,
+        u.isClockedIn ? 'Trabajando' : 'Inactivo',
+        `"${u.proyectoActual || '-'}"`,
+      ].join(',');
+    });
+    const link = document.createElement('a');
+    link.href = encodeURI('data:text/csv;charset=utf-8,' + [head.join(','), ...rows].join('\n'));
+    link.download = 'informe_empleados.csv';
+    link.click();
+  };
+
+  const TABS = [
+    { id: 'employees',   label: T.employees,   icon: <Users className="w-4 h-4" /> },
+    { id: 'absence',     label: T.tabAbsence || 'Ausencias', icon: <Calendar className="w-4 h-4" /> },
+    { id: 'departments', label: T.departments, icon: <Building2 className="w-4 h-4" /> },
+    { id: 'reports',     label: T.reports,     icon: <BarChart2 className="w-4 h-4" /> },
+    { id: 'config',      label: 'Config',      icon: <Settings className="w-4 h-4" /> },
+  ];
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-black flex items-center gap-2">
+            <Shield className="w-6 h-6 text-indigo-600" /> {T.adminPanel}
+          </h1>
+          <p className="text-xs text-gray-400 mt-0.5">{users.length} empleados · sysTicket Premium</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={exportToCSV}
+            className="flex items-center gap-1.5 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-100 transition">
+            <Download className="w-4 h-4" /> {T.exportCSV}
+          </button>
+          <button onClick={() => setShowAdd(v => !v)}
+            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-md shadow-indigo-200 dark:shadow-none">
+            <Plus className="w-4 h-4" /> {T.addEmployee}
+          </button>
+        </div>
+      </div>
+
+      {/* Form nuevo empleado */}
+      {showAdd && (
+        <form onSubmit={handleCreateUser}
+          className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Rol */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rol</label>
+            <select name="r" className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm">
+              <option value="user">Empleado</option>
+              <option value="supervisor">Supervisor</option>
+              <option value="rh">Recursos Humanos</option>
+            </select>
+          </div>
+          {/* Modalidad trabajo */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Modalidad</label>
+            <select name="modalidad" className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm">
+              <option value="office">🏢 Oficina</option>
+              <option value="remote">🏠 Teletrabajo</option>
+            </select>
+          </div>
+          {/* Departamento */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Departamento</label>
+            <select name="dept" className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm">
+              <option value="">Sin departamento</option>
+              {departments.map(d => <option key={d.id} value={d.nombre}>{d.nombre}</option>)}
+            </select>
+          </div>
+          {/* Inputs texto */}
+          {[
+            { name: 'n',  placeholder: 'Nombre completo',    type: 'text'  },
+            { name: 'c',  placeholder: 'Correo electrónico', type: 'email' },
+            { name: 'p',  placeholder: 'Contraseña (mín 6)', type: 'text', minLength: 6 },
+            { name: 'pu', placeholder: 'Puesto / Cargo',     type: 'text'  },
+            { name: 'f',  placeholder: 'Inicio contrato',    type: 'date'  },
+            { name: 'h',  placeholder: 'Horario',            type: 'text', defaultValue: '09:00 - 17:00' },
+          ].map(inp => (
+            <div key={inp.name} className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{inp.placeholder}</label>
+              <input required {...inp}
+                className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm" />
+            </div>
+          ))}
+          <button type="submit"
+            className="col-span-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm transition">
+            Crear Empleado
+          </button>
+        </form>
+      )}
+
+      {/* Tabs */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+        <div className="flex overflow-x-auto border-b dark:border-slate-700">
+          {TABS.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+                activeTab === tab.id
+                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}>
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-5">
+          {activeTab === 'employees' && (
+            <EmployeeTable users={users} T={T} departments={departments} />
+          )}
+          {activeTab === 'absence' && (
+            <AbsenceModule currentUser={adminUser} T={T} showToast={showToast} adminMode />
+          )}
+          {activeTab === 'departments' && (
+            <DepartmentsTab departments={departments} newDept={newDept} setNewDept={setNewDept} showToast={showToast} />
+          )}
+          {activeTab === 'reports' && (
+            <AdminReports users={users} T={T} />
+          )}
+          {activeTab === 'config' && (
+            <div className="space-y-4 max-w-sm">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">{T.extraHourValue}</label>
+                <input type="number" value={bonoInput} onChange={e => setBonoInput(e.target.value)}
+                  className="w-full border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">{T.vacDaysLimit}</label>
+                <input type="number" value={limVacInput} onChange={e => setLimVacInput(e.target.value)}
+                  className="w-full border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl text-sm" />
+              </div>
+              <button onClick={updateConfig}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                <Save className="w-4 h-4" /> {T.saveChanges}
+              </button>
             </div>
           )}
         </div>
       </div>
+    </div>
+  );
+}
 
-      <div className="col-span-1 md:col-span-2 space-y-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-slate-700">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold flex items-center gap-2"><Clock className="w-5 h-5 text-indigo-500" /> {t[lang].status}</h3>
-            {isAdminView && userData.isClockedIn && userData.ultimaUbicacion && (
-              <a href={`https://www.google.com/maps?q=${userData.ultimaUbicacion.lat},${userData.ultimaUbicacion.lng}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-full font-semibold"><Map className="w-3 h-3"/> Mapa</a>
-            )}
-          </div>
-          
-          <div className="flex flex-col sm:flex-row justify-between items-center p-5 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-gray-200 dark:border-slate-700">
-            <div className="text-center sm:text-left mb-4 sm:mb-0">
-              <div className="flex items-center gap-2 justify-center sm:justify-start">
-                <div className={`w-3 h-3 rounded-full animate-pulse ${userData.isClockedIn ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                <span className={`font-semibold text-xl ${userData.isClockedIn ? 'text-green-600' : 'text-gray-500'}`}>{userData.isClockedIn ? t[lang].active : t[lang].inactive}</span>
-              </div>
-              {userData.isClockedIn && userData.proyectoActual && (
-                <div className="mt-2 inline-flex items-center gap-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs font-semibold px-2.5 py-1 rounded-md"><FolderKanban className="w-3.5 h-3.5" /> {userData.proyectoActual}</div>
-              )}
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
-              {!userData.isClockedIn ? (
-                <>
-                  <div className="flex items-center bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 w-full sm:w-auto">
-                    <Tag className="w-4 h-4 text-gray-400 mr-2" />
-                    <select disabled={isAdminView} value={proyectoSeleccionado} onChange={e => setProyectoSeleccionado(e.target.value)} className="text-sm bg-transparent outline-none flex-1">
-                      {listaProyectos.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
+function EmployeeTable({ users, T, departments }) {
+  const [editUid, setEditUid] = useState(null);
+  const [editModalidad, setEditModalidad] = useState('office');
+
+  const startEdit = (u) => { setEditUid(u.uid); setEditModalidad(u.modalidadTrabajo || 'office'); };
+  const saveModalidad = async (uid) => {
+    await updateDoc(doc(db, 'usuarios', uid), { modalidadTrabajo: editModalidad });
+    setEditUid(null);
+  };
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm text-left">
+        <thead className="text-xs text-gray-400 uppercase border-b dark:border-slate-700">
+          <tr>
+            <th className="pb-3">Empleado</th>
+            <th className="pb-3 text-center">Modalidad</th>
+            <th className="pb-3 text-center">Hrs Sem.</th>
+            <th className="pb-3 text-center">Estado</th>
+            <th className="pb-3 text-center">GPS</th>
+            <th className="pb-3 text-right">Borrar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map(u => (
+            <tr key={u.uid} className="border-b dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-700/30">
+              <td className="py-3">
+                <div className="flex items-center gap-3">
+                  <img src={u.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nombre || 'U')}&background=4f46e5&color=fff`}
+                    className="w-9 h-9 rounded-full object-cover flex-shrink-0" alt="" />
+                  <div>
+                    <p className="font-bold">{u.nombre}</p>
+                    <p className="text-xs text-gray-400">{u.puesto} · <span className="text-indigo-500 font-semibold uppercase">{u.role}</span> · ID:{u.empleadoId}</p>
                   </div>
-                  <button onClick={handleClockIn} disabled={isProcessing || isAdminView} className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-6 rounded-lg transition">{t[lang].clockIn}</button>
-                </>
-              ) : (
-                <button onClick={handleClockOut} disabled={isProcessing || isAdminView} className="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-8 rounded-xl transition">{t[lang].clockOut}</button>
-              )}
-            </div>
+                </div>
+              </td>
+              <td className="py-3 text-center">
+                {editUid === u.uid ? (
+                  <div className="flex items-center gap-1 justify-center">
+                    <select value={editModalidad} onChange={e => setEditModalidad(e.target.value)}
+                      className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 text-xs rounded-lg p-1">
+                      <option value="office">🏢 Oficina</option>
+                      <option value="remote">🏠 Teletrabajo</option>
+                    </select>
+                    <button onClick={() => saveModalidad(u.uid)} className="bg-indigo-600 text-white text-xs px-2 py-1 rounded-lg">✓</button>
+                    <button onClick={() => setEditUid(null)} className="text-gray-400 text-xs px-1">✕</button>
+                  </div>
+                ) : (
+                  <button onClick={() => startEdit(u)}
+                    className={`text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 mx-auto hover:opacity-80 transition ${
+                      u.modalidadTrabajo === 'remote'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                        : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                    }`}>
+                    {u.modalidadTrabajo === 'remote' ? <><Wifi className="w-3 h-3" /> Teletrabajo</> : <><Home className="w-3 h-3" /> Oficina</>}
+                    <Edit3 className="w-2.5 h-2.5 opacity-60" />
+                  </button>
+                )}
+              </td>
+              <td className="py-3 text-center font-bold">{(u.total_horas_semana || 0).toFixed(1)}h</td>
+              <td className="py-3 text-center">
+                <span className={`px-2 py-1 rounded-full text-xs font-bold ${u.isClockedIn ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-slate-700'}`}>
+                  {u.isClockedIn ? T.active : T.inactive}
+                </span>
+              </td>
+              <td className="py-3 text-center">
+                {u.isClockedIn && u.ultimaUbicacion
+                  ? <a href={`https://www.google.com/maps?q=${u.ultimaUbicacion.lat},${u.ultimaUbicacion.lng}`} target="_blank" rel="noreferrer"
+                      className="text-indigo-500 hover:underline text-xs flex items-center justify-center gap-1">
+                      <MapPin className="w-3 h-3" /> Ver
+                    </a>
+                  : '-'}
+              </td>
+              <td className="py-3 text-right">
+                <button onClick={async () => { if (window.confirm('¿Eliminar empleado?')) await deleteDoc(doc(db, 'usuarios', u.uid)); }}
+                  className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function DepartmentsTab({ departments, newDept, setNewDept, showToast }) {
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <input value={newDept} onChange={e => setNewDept(e.target.value)} placeholder="Nombre del departamento"
+          className="flex-1 border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl text-sm" />
+        <button onClick={async () => {
+          if (!newDept.trim()) return;
+          await addDoc(collection(db, 'departamentos'), { nombre: newDept.trim(), timestamp: serverTimestamp() });
+          setNewDept(''); showToast('Departamento creado');
+        }} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-1 transition">
+          <Plus className="w-4 h-4" /> Añadir
+        </button>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {departments.map(d => (
+          <div key={d.id} className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 p-3 rounded-xl flex justify-between items-center">
+            <span className="text-sm font-medium flex items-center gap-1.5"><Building2 className="w-4 h-4 text-indigo-400" />{d.nombre}</span>
+            <button onClick={async () => await deleteDoc(doc(db, 'departamentos', d.id))} className="text-red-400 hover:text-red-600 transition"><X className="w-3.5 h-3.5" /></button>
           </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AdminReports({ users, T }) {
+  const working  = users.filter(u => u.isClockedIn).length;
+  const totalHrs = users.reduce((a, u) => a + (u.total_horas_semana || 0), 0);
+  const stats = [
+    { label: 'Total empleados',   value: users.length,                                    color: 'indigo', icon: <Users className="w-5 h-5" /> },
+    { label: 'Trabajando ahora',  value: working,                                          color: 'green',  icon: <CheckCircle2 className="w-5 h-5" /> },
+    { label: 'Horas sem. total',  value: totalHrs.toFixed(0) + 'h',                        color: 'blue',   icon: <Clock className="w-5 h-5" /> },
+    { label: 'Media h/empleado',  value: users.length ? (totalHrs / users.length).toFixed(1) + 'h' : '0h', color: 'purple', icon: <TrendingUp className="w-5 h-5" /> },
+  ];
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {stats.map((s, i) => (
+          <div key={i} className={`bg-${s.color}-50 dark:bg-${s.color}-900/20 border border-${s.color}-100 dark:border-${s.color}-800 p-4 rounded-xl`}>
+            <div className={`text-${s.color}-500 mb-2`}>{s.icon}</div>
+            <p className={`text-2xl font-black text-${s.color}-700 dark:text-${s.color}-300`}>{s.value}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+      <table className="w-full text-sm text-left">
+        <thead className="text-xs text-gray-400 uppercase border-b dark:border-slate-700">
+          <tr><th className="pb-2">Empleado</th><th className="pb-2 text-center">Horas</th><th className="pb-2 text-center">Estado</th><th className="pb-2 text-center">Vac.</th></tr>
+        </thead>
+        <tbody>
+          {users.map(u => {
+            const d = (getMonthsDiff(u.fecha_inicio_contrato) * 2) - (u.dias_vacaciones_gastados || 0);
+            return (
+              <tr key={u.uid} className="border-b dark:border-slate-700/50">
+                <td className="py-2 flex items-center gap-2">
+                  <img src={u.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nombre || 'U')}&background=4f46e5&color=fff`} className="w-6 h-6 rounded-full" alt="" />
+                  {u.nombre}
+                </td>
+                <td className="py-2 text-center">{(u.total_horas_semana || 0).toFixed(1)}h</td>
+                <td className="py-2 text-center"><span className={`text-xs font-bold ${u.isClockedIn ? 'text-green-600' : 'text-gray-400'}`}>{u.isClockedIn ? T.active : T.inactive}</span></td>
+                <td className="py-2 text-center font-bold">{d}d</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── PROYECTOS TAB ────────────────────────────────────────────────────────────
+function ProjectsTab({ currentUser, T, showToast }) {
+  const [fichajes, setFichajes] = useState([]);
+  const [file, setFile]         = useState(null);
+  const [archivos, setArchivos] = useState([]);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    const un = onSnapshot(
+      query(collection(db, 'fichajes'), where('uid', '==', currentUser.uid), orderBy('fecha', 'desc')),
+      snap => setFichajes(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    );
+    const unA = onSnapshot(
+      query(collection(db, 'archivos'), where('uid', '==', currentUser.uid), orderBy('timestamp', 'desc')),
+      snap => setArchivos(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    );
+    return () => { un(); unA(); };
+  }, [currentUser.uid]);
+
+  const horasPorProyecto = fichajes.reduce((acc, f) => {
+    if (f.entrada && f.salida) {
+      const h = (new Date(f.salida) - new Date(f.entrada)) / 3600000;
+      acc[f.proyecto] = (acc[f.proyecto] || 0) + h;
+    }
+    return acc;
+  }, {});
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fRef = ref(storage, `archivos/${currentUser.uid}_${Date.now()}_${file.name}`);
+      await uploadBytes(fRef, file);
+      const url = await getDownloadURL(fRef);
+      await addDoc(collection(db, 'archivos'), { uid: currentUser.uid, nombre: currentUser.nombre, nombreArchivo: file.name, url, timestamp: serverTimestamp() });
+      showToast('Archivo subido ✓'); setFile(null);
+    } catch { showToast('Error al subir', 'error'); }
+    setUploading(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+        <h3 className="font-bold mb-4 flex items-center gap-2"><BarChart2 className="w-5 h-5 text-indigo-500" /> {T.hoursProject}</h3>
+        {Object.keys(horasPorProyecto).length === 0
+          ? <p className="text-gray-400 text-sm">Sin datos aún.</p>
+          : <div className="space-y-3">
+              {Object.entries(horasPorProyecto).map(([proj, h]) => (
+                <div key={proj}>
+                  <div className="flex justify-between text-sm mb-1"><span className="font-medium">{proj}</span><span className="text-gray-400">{h.toFixed(1)}h</span></div>
+                  <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2">
+                    <div className="bg-indigo-500 h-2 rounded-full" style={{ width: `${Math.min((h / 40) * 100, 100)}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+        }
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+        <h3 className="font-bold mb-4 flex items-center gap-2"><Paperclip className="w-5 h-5 text-indigo-500" /> {T.upload}</h3>
+        <div className="flex gap-3 items-center mb-4 flex-wrap">
+          <input type="file" onChange={e => setFile(e.target.files[0])}
+            className="text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 flex-1 min-w-0" />
+          <button onClick={handleUpload} disabled={!file || uploading}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-40 flex items-center gap-1.5 transition whitespace-nowrap">
+            <Paperclip className="w-4 h-4" /> {uploading ? '...' : T.upload}
+          </button>
+        </div>
+        <div className="space-y-2 max-h-48 overflow-y-auto">
+          {archivos.map(a => (
+            <div key={a.id} className="flex items-center justify-between text-xs bg-gray-50 dark:bg-slate-700 p-2.5 rounded-xl">
+              <span className="flex items-center gap-1.5 truncate"><FileText className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />{a.nombreArchivo}</span>
+              <a href={a.url} target="_blank" rel="noreferrer"
+                className="text-indigo-600 hover:underline ml-2 flex-shrink-0 flex items-center gap-1">
+                <Download className="w-3 h-3" /> Ver
+              </a>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── REPORTS TAB ──────────────────────────────────────────────────────────────
+function ReportsTab({ currentUser, T }) {
+  const [fichajes, setFichajes] = useState([]);
+  useEffect(() => {
+    const un = onSnapshot(
+      query(collection(db, 'fichajes'), where('uid', '==', currentUser.uid), orderBy('fecha', 'desc')),
+      snap => setFichajes(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    );
+    return () => un();
+  }, [currentUser.uid]);
+
+  const exportCSV = () => {
+    const head = ['Fecha', 'Entrada', 'Salida', 'Horas', 'Proyecto'];
+    const rows = fichajes.map(f => {
+      const h = f.entrada && f.salida ? ((new Date(f.salida) - new Date(f.entrada)) / 3600000).toFixed(1) : '-';
+      return [`"${f.fecha}"`, `"${f.entrada ? new Date(f.entrada).toLocaleTimeString() : '-'}"`, `"${f.salida ? new Date(f.salida).toLocaleTimeString() : '-'}"`, h, `"${f.proyecto || '-'}"`].join(',');
+    });
+    const link = document.createElement('a');
+    link.href = encodeURI('data:text/csv;charset=utf-8,' + [head.join(','), ...rows].join('\n'));
+    link.download = `informe_${currentUser.nombre}.csv`;
+    link.click();
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+      <div className="flex justify-between items-center mb-5">
+        <h3 className="font-bold flex items-center gap-2"><TrendingUp className="w-5 h-5 text-indigo-500" /> {T.advancedReports}</h3>
+        <button onClick={exportCSV}
+          className="flex items-center gap-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-green-100 transition">
+          <Download className="w-3.5 h-3.5" /> {T.exportCSV}
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead className="text-xs text-gray-400 uppercase border-b dark:border-slate-700">
+            <tr><th className="pb-2">Fecha</th><th className="pb-2">Entrada</th><th className="pb-2">Salida</th><th className="pb-2">Horas</th><th className="pb-2">Proyecto</th></tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50 dark:divide-slate-700">
+            {fichajes.slice(0, 30).map(f => {
+              const h = f.entrada && f.salida ? ((new Date(f.salida) - new Date(f.entrada)) / 3600000).toFixed(1) : '-';
+              return (
+                <tr key={f.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                  <td className="py-2">{f.fecha}</td>
+                  <td className="py-2">{f.entrada ? new Date(f.entrada).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+                  <td className="py-2">{f.salida ? new Date(f.salida).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : <span className="text-green-500 font-medium">En curso</span>}</td>
+                  <td className="py-2 font-bold">{h}h</td>
+                  <td className="py-2 text-gray-500">{f.proyecto || '-'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── MÓDULO AUSENCIAS ─────────────────────────────────────────────────────────
+function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [fInicio, setFInicio]         = useState('');
+  const [fFin, setFFin]               = useState('');
+  const [tipoAus, setTipoAus]         = useState('vacaciones');
+  const [archivo, setArchivo]         = useState(null);
+  const [isSub, setIsSub]             = useState(false);
+  const [usersMap, setUsersMap]       = useState({});
+
+  const canApprove = ['admin', 'rh', 'supervisor'].includes(currentUser.role);
+  const isWorker   = !adminMode && ['user', 'supervisor', 'rh'].includes(currentUser.role);
+
+  useEffect(() => {
+    const unQ = onSnapshot(query(collection(db, 'vacaciones'), orderBy('timestamp', 'desc')),
+      snap => setSolicitudes(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    );
+    const unU = onSnapshot(collection(db, 'usuarios'), snap => {
+      const m = {}; snap.docs.forEach(d => { m[d.id] = d.data(); }); setUsersMap(m);
+    });
+    return () => { unQ(); unU(); };
+  }, []);
+
+  const handleSolicitar = async (e) => {
+    e.preventDefault();
+    if (!fInicio || !fFin || new Date(fInicio) > new Date(fFin)) { showToast(T.invalidDates, 'error'); return; }
+    setIsSub(true);
+    const dias = calculateDays(fInicio, fFin);
+    let urlJust = null;
+    try {
+      if (archivo) {
+        const fRef = ref(storage, `justificantes/${currentUser.uid}_${Date.now()}`);
+        await uploadBytes(fRef, archivo);
+        urlJust = await getDownloadURL(fRef);
+      }
+      await addDoc(collection(db, 'vacaciones'), {
+        empleadoUid: currentUser.uid, nombreEmpleado: currentUser.nombre,
+        correoEmpleado: currentUser.correo || '',
+        fechaInicio: fInicio, fechaFin: fFin, diasSolicitados: dias,
+        tipo: tipoAus, urlJustificante: urlJust,
+        estado: 'pendiente', timestamp: serverTimestamp(),
+      });
+      setFInicio(''); setFFin(''); setArchivo(null); setTipoAus('vacaciones');
+      showToast(T.requestSent);
+    } catch { showToast('Error', 'error'); }
+    setIsSub(false);
+  };
+
+  const handleAprobar = async (id, eUid, dias, accion, tipo, fechaInicio, fechaFin) => {
+    try {
+      await updateDoc(doc(db, 'vacaciones', id), { estado: accion });
+      if (accion === 'aprobada' && tipo === 'vacaciones') {
+        const uRef  = doc(db, 'usuarios', eUid);
+        const uSnap = await getDoc(uRef);
+        if (uSnap.exists()) await updateDoc(uRef, { dias_vacaciones_gastados: (uSnap.data().dias_vacaciones_gastados || 0) + dias });
+      }
+      // Email al empleado
+      const emp = usersMap[eUid];
+      if (emp?.correo) {
+        const emoji = accion === 'aprobada' ? '✅' : '❌';
+        await sendEmailNotification(
+          emp.correo, emp.nombre,
+          `[sysTicket] Tu solicitud de ${tipo} ha sido ${accion}`,
+          `Hola ${emp.nombre},\n\nTu solicitud de ${tipo} ha sido ${emoji} ${accion.toUpperCase()}.\n\nFechas: ${formatDate(fechaInicio)} → ${formatDate(fechaFin)} (${dias} días)\n\nsysTicket`
+        );
+      }
+      showToast(`${accion === 'aprobada' ? '✅' : '❌'} Solicitud ${accion}`, accion === 'aprobada' ? 'success' : 'warning');
+    } catch { showToast('Error', 'error'); }
+  };
+
+  const pendientes    = solicitudes.filter(s => s.estado === 'pendiente');
+  const aprobadas     = solicitudes.filter(s => s.estado === 'aprobada');
+  const misSolicitudes = solicitudes.filter(s => s.empleadoUid === currentUser.uid);
+
+  return (
+    <div className={adminMode ? '' : 'bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden'}>
+      {!adminMode && (
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 text-white flex items-center gap-2">
+          <Calendar className="w-5 h-5" />
+          <h2 className="text-lg font-bold">{T.absence}</h2>
+        </div>
+      )}
+      <div className="p-4 sm:p-6 space-y-6">
+        <div className={`grid grid-cols-1 ${isWorker && canApprove ? 'lg:grid-cols-2' : ''} gap-6`}>
+          {/* FORM SOLICITUD */}
+          {isWorker && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 dark:bg-slate-900/50 p-5 rounded-xl border border-gray-200 dark:border-slate-700">
+                <h3 className="font-semibold mb-4 flex items-center gap-2"><Plus className="w-4 h-4" /> {T.newRequest}</h3>
+                <form onSubmit={handleSolicitar} className="space-y-3">
+                  <select value={tipoAus} onChange={e => setTipoAus(e.target.value)}
+                    className="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm">
+                    <option value="vacaciones">🏖 Vacaciones</option>
+                    <option value="baja_medica">🏥 {T.medicalLeave}</option>
+                    <option value="cita_medica">🩺 {T.medicalAppt}</option>
+                  </select>
+                  <div className="flex gap-2">
+                    <input type="date" required value={fInicio} onChange={e => setFInicio(e.target.value)}
+                      className="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm" />
+                    <input type="date" required value={fFin} onChange={e => setFFin(e.target.value)}
+                      className="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm" />
+                  </div>
+                  {(tipoAus !== 'vacaciones') && (
+                    <div className="border-2 border-dashed border-gray-200 dark:border-slate-600 rounded-xl p-3 text-center">
+                      <Paperclip className="w-4 h-4 text-gray-400 mx-auto mb-1" />
+                      <input type="file" required accept="image/*,.pdf" onChange={e => setArchivo(e.target.files[0])} className="w-full text-xs text-gray-500" />
+                    </div>
+                  )}
+                  {fInicio && fFin && new Date(fInicio) <= new Date(fFin) && (
+                    <p className="text-xs text-indigo-500 font-semibold">{calculateDays(fInicio, fFin)} días</p>
+                  )}
+                  <button type="submit" disabled={isSub}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50 transition">
+                    {isSub ? '...' : T.sendRequest}
+                  </button>
+                </form>
+              </div>
+              {/* Historial */}
+              <div className="border dark:border-slate-700 rounded-xl overflow-hidden">
+                <div className="bg-gray-50 dark:bg-slate-900 p-3 border-b dark:border-slate-700 flex items-center gap-2">
+                  <ClipboardList className="w-4 h-4 text-gray-400" />
+                  <h3 className="text-sm font-semibold">{T.myHistory}</h3>
+                </div>
+                <div className="max-h-52 overflow-y-auto p-2 space-y-1.5">
+                  {misSolicitudes.map(s => (
+                    <div key={s.id} className="text-xs flex justify-between items-center p-2.5 bg-gray-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700">
+                      <span className="flex items-center gap-1.5">
+                        {s.tipo === 'vacaciones' ? '🏖' : s.tipo === 'baja_medica' ? '🏥' : '🩺'}
+                        {formatDate(s.fechaInicio)} – {formatDate(s.fechaFin)}
+                      </span>
+                      <span className={`uppercase font-bold text-[9px] px-1.5 py-0.5 rounded-full ${
+                        s.estado === 'aprobada' ? 'bg-green-100 text-green-700' : s.estado === 'rechazada' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'
+                      }`}>{s.estado}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* APROBAR */}
+          {canApprove && (
+            <div className="bg-orange-50 dark:bg-orange-900/10 p-5 rounded-xl border border-orange-200 dark:border-orange-800 max-h-[550px] overflow-y-auto">
+              <h3 className="font-semibold text-orange-900 dark:text-orange-300 mb-4 flex items-center gap-2">
+                {T.pending}
+                <span className="bg-orange-600 text-white text-xs px-2 py-0.5 rounded-full">{pendientes.length}</span>
+              </h3>
+              <div className="space-y-3">
+                {pendientes.map(s => (
+                  <div key={s.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-orange-100 dark:border-slate-600 shadow-sm text-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <img src={usersMap[s.empleadoUid]?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.nombreEmpleado || 'U')}&background=4f46e5&color=fff`}
+                        className="w-7 h-7 rounded-full object-cover" alt="" />
+                      <div>
+                        <p className="font-bold">{s.nombreEmpleado}</p>
+                        <p className="text-[10px] text-gray-400 uppercase">{s.tipo}</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-2">{formatDate(s.fechaInicio)} → {formatDate(s.fechaFin)} · <strong>{s.diasSolicitados}d</strong></p>
+                    {s.urlJustificante && (
+                      <a href={s.urlJustificante} target="_blank" rel="noreferrer" className="text-blue-500 text-xs hover:underline flex gap-1 items-center mb-2">
+                        <FileText className="w-3 h-3" /> Ver justificante
+                      </a>
+                    )}
+                    <div className="flex gap-2">
+                      <button onClick={() => handleAprobar(s.id, s.empleadoUid, s.diasSolicitados, 'aprobada', s.tipo, s.fechaInicio, s.fechaFin)}
+                        className="flex-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 hover:bg-green-200 transition">
+                        <Check className="w-3.5 h-3.5" /> {T.approve}
+                      </button>
+                      <button onClick={() => handleAprobar(s.id, s.empleadoUid, s.diasSolicitados, 'rechazada', s.tipo, s.fechaInicio, s.fechaFin)}
+                        className="flex-1 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 hover:bg-red-200 transition">
+                        <X className="w-3.5 h-3.5" /> {T.reject}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {pendientes.length === 0 && <p className="text-sm text-orange-400 text-center py-4">Sin solicitudes pendientes ✓</p>}
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-slate-700">
-             <p className="text-sm font-medium text-gray-500 mb-1">{t[lang].dailyLimit}</p>
-             <div className="flex items-baseline gap-1">
-               <span className={`text-4xl font-black ${horasDiariasReales > 8 ? 'text-red-500' : 'text-gray-800 dark:text-white'}`}>{horasDiariasReales.toFixed(1)}</span>
-               <span className="text-gray-500 font-medium">/ 8h</span>
-             </div>
-             <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2 mt-4 overflow-hidden">
-               <div className={`h-full rounded-full ${horasDiariasReales > 8 ? 'bg-red-500' : 'bg-indigo-500'}`} style={{ width: `${Math.min((horasDiariasReales / 8) * 100, 100)}%` }}></div>
-             </div>
+        {/* Ausencias aprobadas del equipo */}
+        <div className="border dark:border-slate-700 rounded-xl overflow-hidden">
+          <div className="bg-gray-50 dark:bg-slate-900/50 p-4 border-b dark:border-slate-700">
+            <h3 className="font-semibold text-sm">{T.teamApproved}</h3>
           </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-slate-700">
-             <p className="text-sm font-medium text-gray-500 mb-1">{t[lang].weeklyLimit}</p>
-             <div className="flex items-baseline gap-1">
-               <span className={`text-4xl font-black ${horasSemanales > 40 ? 'text-orange-500' : 'text-gray-800 dark:text-white'}`}>{horasSemanales.toFixed(1)}</span>
-               <span className="text-gray-500 font-medium">/ 40h</span>
-             </div>
-             <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2 mt-4 overflow-hidden">
-               <div className={`h-full rounded-full ${horasSemanales > 40 ? 'bg-orange-500' : 'bg-green-500'}`} style={{ width: `${Math.min((horasSemanales / 40) * 100, 100)}%` }}></div>
-             </div>
+          <div className="p-4 overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead><tr className="text-xs text-gray-400 uppercase border-b dark:border-slate-700"><th className="pb-2">Empleado</th><th className="pb-2">Tipo</th><th className="pb-2">Fechas</th><th className="pb-2 text-right">Días</th></tr></thead>
+              <tbody>
+                {aprobadas.map(v => (
+                  <tr key={v.id} className="border-b border-gray-50 dark:border-slate-700/50">
+                    <td className="py-2 flex items-center gap-2">
+                      <img src={usersMap[v.empleadoUid]?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(v.nombreEmpleado || 'U')}&background=4f46e5&color=fff`}
+                        className="w-6 h-6 rounded-full object-cover" alt="" />
+                      {v.nombreEmpleado}
+                    </td>
+                    <td className="py-2 text-xs text-gray-500">{v.tipo === 'vacaciones' ? '🏖' : v.tipo === 'baja_medica' ? '🏥' : '🩺'} {v.tipo}</td>
+                    <td className="py-2 text-xs">{formatDate(v.fechaInicio)} – {formatDate(v.fechaFin)}</td>
+                    <td className="py-2 text-right font-bold text-blue-500">{v.diasSolicitados}d</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -376,288 +1564,166 @@ function UserProfile({ userData, config, lang, t, isAdminView = false }) {
   );
 }
 
-// --- GESTOR DE CHAT ---
-function GlobalChatManager({ currentUser, onClose }) {
-  const [users, setUsers] = useState([]);
-  const [messages, setMessages] = useState([]);
+// ─── CHAT ─────────────────────────────────────────────────────────────────────
+function GlobalChatManager({ currentUser, onClose, T }) {
+  const [users, setUsers]             = useState([]);
+  const [messages, setMessages]       = useState([]);
   const [activeContact, setActiveContact] = useState(null);
 
   useEffect(() => {
     const unU = onSnapshot(collection(db, 'usuarios'), snap => setUsers(snap.docs.map(d => ({ uid: d.id, ...d.data() }))));
-    const unM = onSnapshot(collection(db, 'mensajes'), snap => setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unM = onSnapshot(collection(db, 'mensajes'),  snap => setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     return () => { unU(); unM(); };
   }, []);
 
   const allowedContacts = users.filter(u => {
     if (u.uid === currentUser.uid) return false;
-    const hasAdminHistory = messages.some(m => (m.from === u.uid && m.to === currentUser.uid && u.role === 'admin') || (m.from === currentUser.uid && m.to === u.uid && u.role === 'admin'));
+    const hist = messages.some(m => (m.from === u.uid && m.to === currentUser.uid) || (m.from === currentUser.uid && m.to === u.uid));
     if (currentUser.role === 'admin') return true;
-    if (currentUser.role === 'rh') return u.role === 'user' || u.role === 'supervisor' || (u.role === 'admin' && hasAdminHistory);
-    if (currentUser.role === 'supervisor') return u.role === 'user' || u.role === 'rh' || u.role === 'supervisor' || (u.role === 'admin' && hasAdminHistory);
-    return u.role === 'supervisor' || u.role === 'rh' || (u.role === 'admin' && hasAdminHistory);
+    if (currentUser.role === 'rh')   return u.role === 'user' || u.role === 'supervisor' || (u.role === 'admin' && hist);
+    if (currentUser.role === 'supervisor') return u.role !== 'admin' || hist;
+    return u.role === 'supervisor' || u.role === 'rh' || (u.role === 'admin' && hist);
   });
 
-  if (activeContact) {
-    return (
-      <div className="flex flex-col h-full bg-gray-50 dark:bg-slate-900">
-        <div className="bg-indigo-600 dark:bg-indigo-800 text-white p-3 flex items-center gap-2 shadow-sm z-10">
-          <button onClick={() => setActiveContact(null)} className="hover:bg-white/20 p-1.5 rounded-lg transition"><ChevronLeft className="w-5 h-5"/></button>
-          <img src={activeContact.photoURL || `https://ui-avatars.com/api/?name=${activeContact.nombre}`} className="w-8 h-8 rounded-full border border-indigo-400 object-cover bg-white" alt=""/>
-          <div className="flex-1 overflow-hidden">
-            <h3 className="font-bold text-sm truncate">{activeContact.nombre}</h3>
-            <p className="text-[10px] text-indigo-200 uppercase tracking-wider">{activeContact.role}</p>
-          </div>
+  const unread = (uid) => messages.filter(m => m.from === uid && m.to === currentUser.uid && !m.read).length;
+
+  if (activeContact) return (
+    <div className="flex flex-col h-full">
+      <div className="bg-indigo-600 dark:bg-indigo-800 text-white p-3 flex items-center gap-2">
+        <button onClick={() => setActiveContact(null)} className="hover:bg-white/20 p-1.5 rounded-lg transition"><ChevronLeft className="w-5 h-5" /></button>
+        <img src={activeContact.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeContact.nombre || 'U')}`}
+          className="w-8 h-8 rounded-full object-cover border border-indigo-400" alt="" />
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-sm truncate">{activeContact.nombre}</h3>
+          <p className="text-[10px] text-indigo-200 uppercase">{activeContact.role}</p>
         </div>
-        <ChatBox currentUserId={currentUser.uid} otherParty={activeContact.uid} />
       </div>
-    );
-  }
+      <ChatBox currentUserId={currentUser.uid} otherParty={activeContact.uid} T={T} />
+    </div>
+  );
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-800">
-      <div className="bg-indigo-600 dark:bg-indigo-800 text-white p-4 shadow-sm z-10 flex justify-between"><h3 className="font-bold">Contactos</h3><button onClick={onClose}><X className="w-5 h-5"/></button></div>
-      <div className="flex-1 overflow-y-auto p-2">
+    <div className="flex flex-col h-full">
+      <div className="bg-indigo-600 dark:bg-indigo-800 text-white p-3 flex justify-between items-center">
+        <h3 className="font-bold flex items-center gap-2"><MessageSquare className="w-4 h-4" /> {T.contacts}</h3>
+        <button onClick={onClose} className="hover:bg-white/20 p-1 rounded-lg transition"><X className="w-5 h-5" /></button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-2 bg-white dark:bg-slate-800">
         {allowedContacts.map(c => (
-          <button key={c.uid} onClick={() => setActiveContact(c)} className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-xl transition text-left border border-transparent">
-            <img src={c.photoURL || `https://ui-avatars.com/api/?name=${c.nombre}`} className="w-12 h-12 rounded-full object-cover bg-white shadow-sm" alt=""/>
-            <div className="flex-1 border-b border-gray-100 dark:border-slate-700 pb-2">
-              <p className="font-bold text-gray-800 dark:text-gray-100 text-sm">{c.nombre}</p>
+          <button key={c.uid} onClick={() => setActiveContact(c)}
+            className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-xl transition text-left">
+            <div className="relative flex-shrink-0">
+              <img src={c.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.nombre || 'U')}`}
+                className="w-11 h-11 rounded-full object-cover" alt="" />
+              <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-slate-800 ${c.isClockedIn ? 'bg-green-500' : 'bg-gray-400'}`} />
+            </div>
+            <div className="flex-1 min-w-0 border-b border-gray-100 dark:border-slate-700 pb-2">
+              <p className="font-bold text-sm text-gray-800 dark:text-gray-100">{c.nombre}</p>
               <p className="text-[10px] uppercase font-bold text-indigo-500 mt-0.5">{c.role}</p>
             </div>
+            {unread(c.uid) > 0 && (
+              <span className="bg-indigo-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">{unread(c.uid)}</span>
+            )}
           </button>
         ))}
+        {allowedContacts.length === 0 && <p className="text-center text-gray-400 text-sm py-8">Sin contactos</p>}
       </div>
     </div>
   );
 }
 
-function ChatBox({ currentUserId, otherParty }) {
+function ChatBox({ currentUserId, otherParty, T }) {
   const [messages, setMessages] = useState([]);
-  const [text, setText] = useState('');
+  const [text, setText]         = useState('');
+  const [file, setFile]         = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const bottomRef               = useRef(null);
+  const fileInputRef            = useRef(null);
 
   useEffect(() => {
-    const unM = onSnapshot(collection(db, 'mensajes'), snap => {
-      const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setMessages(msgs.filter(m => (m.from === currentUserId && m.to === otherParty) || (m.from === otherParty && m.to === currentUserId)).sort((a, b) => (a.timestamp?.toMillis()||0) - (b.timestamp?.toMillis()||0)));
+    const un = onSnapshot(collection(db, 'mensajes'), snap => {
+      const filtered = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(m => (m.from === currentUserId && m.to === otherParty) || (m.from === otherParty && m.to === currentUserId))
+        .sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
+      setMessages(filtered);
     });
-    return () => unM();
+    return () => un();
   }, [currentUserId, otherParty]);
 
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
   const handleSend = async (e) => {
-    e.preventDefault(); if (!text.trim()) return;
-    try { await addDoc(collection(db, 'mensajes'), { from: currentUserId, to: otherParty, text: text.trim(), timestamp: serverTimestamp() }); setText(''); } catch (e) {}
+    e.preventDefault();
+    if (!text.trim() && !file) return;
+    setUploading(true);
+    try {
+      let fileUrl = null, fileName = null;
+      if (file) {
+        const fRef = ref(storage, `chat/${currentUserId}_${Date.now()}_${file.name}`);
+        await uploadBytes(fRef, file);
+        fileUrl = await getDownloadURL(fRef);
+        fileName = file.name;
+        setFile(null);
+      }
+      await addDoc(collection(db, 'mensajes'), {
+        from: currentUserId, to: otherParty,
+        text: text.trim(), fileUrl, fileName,
+        timestamp: serverTimestamp(), read: false,
+      });
+      setText('');
+    } catch {}
+    setUploading(false);
   };
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden h-full">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="flex flex-col flex-1 overflow-hidden bg-gray-50 dark:bg-slate-900">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {messages.map(m => (
-          <div key={m.id} className={`flex flex-col ${m.from === currentUserId ? 'items-end ml-12' : 'items-start mr-12'}`}>
-            <div className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm ${m.from === currentUserId ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 dark:text-white rounded-bl-sm'}`}>{m.text}</div>
+          <div key={m.id} className={`flex flex-col ${m.from === currentUserId ? 'items-end' : 'items-start'}`}>
+            <div className={`max-w-[80%] px-3.5 py-2.5 rounded-2xl text-sm shadow-sm break-words ${
+              m.from === currentUserId
+                ? 'bg-indigo-600 text-white rounded-br-none'
+                : 'bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-800 dark:text-white rounded-bl-none'
+            }`}>
+              {m.text && <p>{m.text}</p>}
+              {m.fileUrl && (
+                <a href={m.fileUrl} target="_blank" rel="noreferrer"
+                  className={`flex items-center gap-1 text-xs mt-1 underline ${m.from === currentUserId ? 'text-indigo-200' : 'text-indigo-500'}`}>
+                  <Paperclip className="w-3 h-3" /> {m.fileName || 'Archivo'}
+                </a>
+              )}
+            </div>
+            <span className="text-[9px] text-gray-400 mt-0.5 px-1">
+              {m.timestamp?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
           </div>
         ))}
+        <div ref={bottomRef} />
       </div>
-      <form onSubmit={handleSend} className="p-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 flex gap-2">
-        <input type="text" value={text} onChange={e => setText(e.target.value)} placeholder="Mensaje..." className="flex-1 bg-gray-100 dark:bg-slate-700 dark:text-white rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
-        <button type="submit" className="bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-700 shadow-sm"><Send className="w-4 h-4" /></button>
-      </form>
-    </div>
-  );
-}
-
-// --- MÓDULO DE AUSENCIAS ---
-function AbsenceModule({ currentUser, lang, t }) {
-  const [solicitudes, setSolicitudes] = useState([]);
-  const [fInicio, setFInicio] = useState(''); const [fFin, setFFin] = useState('');
-  const [tipoAus, setTipoAus] = useState('vacaciones'); const [archivo, setArchivo] = useState(null);
-  const [isSub, setIsSub] = useState(false);
-
-  const canApprove = currentUser.role === 'admin' || currentUser.role === 'rh';
-  const isWorker = currentUser.role === 'user' || currentUser.role === 'supervisor' || currentUser.role === 'rh';
-
-  useEffect(() => {
-    const unQ = onSnapshot(query(collection(db, 'vacaciones'), orderBy('timestamp', 'desc')), snap => setSolicitudes(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    return () => unQ();
-  }, []);
-
-  const handleSolicitar = async (e) => {
-    e.preventDefault(); if(!fInicio || !fFin || new Date(fInicio) > new Date(fFin)) return alert("Fechas inválidas");
-    setIsSub(true); const dias = calculateDays(fInicio, fFin); let urlJust = null;
-    try {
-      if (archivo) {
-        const fileRef = ref(storage, `justificantes/${currentUser.uid}_${Date.now()}`);
-        await uploadBytes(fileRef, archivo); urlJust = await getDownloadURL(fileRef);
-      }
-      await addDoc(collection(db, 'vacaciones'), { empleadoUid: currentUser.uid, nombreEmpleado: currentUser.nombre, fechaInicio: fInicio, fechaFin: fFin, diasSolicitados: dias, tipo: tipoAus, urlJustificante: urlJust, estado: 'pendiente', timestamp: serverTimestamp() });
-      setFInicio(''); setFFin(''); setArchivo(null); setTipoAus('vacaciones'); alert("Enviado.");
-    } catch(e) {} setIsSub(false);
-  };
-
-  const handleAprobar = async (id, eUid, dias, accion, tipo) => {
-    if(!window.confirm(`¿${accion}?`)) return;
-    try {
-      await updateDoc(doc(db, 'vacaciones', id), { estado: accion });
-      if (accion === 'aprobada' && tipo === 'vacaciones') {
-        const uRef = doc(db, 'usuarios', eUid); const uSnap = await getDoc(uRef);
-        if(uSnap.exists()) await updateDoc(uRef, { dias_vacaciones_gastados: (uSnap.data().dias_vacaciones_gastados || 0) + dias });
-      }
-    } catch(e){}
-  };
-
-  const aprobadas = solicitudes.filter(s => s.estado === 'aprobada');
-  const misSolicitudes = solicitudes.filter(s => s.empleadoUid === currentUser.uid);
-
-  return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden mt-6">
-      <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 text-white flex items-center gap-2"><Calendar className="w-5 h-5" /><h2 className="text-lg font-bold">{t[lang].absence}</h2></div>
-      <div className="p-6 flex flex-col gap-8">
-        <div className={`grid grid-cols-1 ${isWorker && canApprove ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-8`}>
-          {isWorker && (
-            <div className="space-y-6">
-              <div className="bg-gray-50 dark:bg-slate-900/50 p-5 rounded-xl border border-gray-200 dark:border-slate-700">
-                <h3 className="font-semibold mb-4">Nueva Solicitud</h3>
-                <form onSubmit={handleSolicitar} className="space-y-4">
-                  <select value={tipoAus} onChange={e=>setTipoAus(e.target.value)} className="w-full border dark:border-slate-600 p-2 rounded-lg text-sm dark:bg-slate-700">
-                    <option value="vacaciones">Vacaciones</option><option value="baja_medica">Baja Médica</option>
-                  </select>
-                  <div className="flex gap-2">
-                    <input type="date" required value={fInicio} onChange={e=>setFInicio(e.target.value)} className="w-full border dark:border-slate-600 p-2 rounded-lg text-sm dark:bg-slate-700" />
-                    <input type="date" required value={fFin} onChange={e=>setFFin(e.target.value)} className="w-full border dark:border-slate-600 p-2 rounded-lg text-sm dark:bg-slate-700" />
-                  </div>
-                  {tipoAus === 'baja_medica' && <input type="file" required accept="image/*,.pdf" onChange={e => setArchivo(e.target.files[0])} className="w-full text-xs" />}
-                  <button type="submit" disabled={isSub} className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">{isSub ? '...' : 'Enviar'}</button>
-                </form>
-              </div>
-              {/* Historial (Simplificado UI) */}
-              <div className="border dark:border-slate-700 rounded-xl overflow-hidden"><div className="bg-gray-50 dark:bg-slate-900 p-3 border-b dark:border-slate-700"><h3 className="text-sm font-semibold">Mi Historial</h3></div>
-              <div className="max-h-48 overflow-y-auto p-3 space-y-2">{misSolicitudes.map(s => (<div key={s.id} className="text-xs flex justify-between p-2 bg-gray-50 dark:bg-slate-800 rounded border dark:border-slate-600"><span>{formatDate(s.fechaInicio)} - {formatDate(s.fechaFin)}</span><span className="uppercase font-bold text-[9px]">{s.estado}</span></div>))}</div></div>
-            </div>
-          )}
-          {canApprove && (
-            <div className="bg-orange-50 dark:bg-orange-900/20 p-5 rounded-xl border border-orange-200 dark:border-orange-800 max-h-[600px] overflow-y-auto">
-              <h3 className="font-semibold text-orange-900 dark:text-orange-300 mb-4 flex items-center gap-2">Pendientes <span className="bg-orange-600 text-white text-xs px-2 py-0.5 rounded-full">{solicitudes.filter(s=>s.estado==='pendiente').length}</span></h3>
-              <div className="space-y-3">{solicitudes.filter(s => s.estado === 'pendiente').map(s => (
-                  <div key={s.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-orange-100 dark:border-slate-600 shadow-sm text-sm relative">
-                    <p className="font-bold">{s.nombreEmpleado} <span className="text-[10px] text-gray-500">({s.tipo})</span></p>
-                    <p className="text-gray-500 my-1">{formatDate(s.fechaInicio)} al {formatDate(s.fechaFin)} ({s.diasSolicitados}d)</p>
-                    {s.urlJustificante && <a href={s.urlJustificante} target="_blank" rel="noreferrer" className="text-blue-500 text-xs hover:underline flex gap-1 items-center mb-2"><FileText className="w-3 h-3"/>Ver Archivo</a>}
-                    <div className="flex gap-2"><button onClick={()=>handleAprobar(s.id, s.empleadoUid, s.diasSolicitados, 'aprobada', s.tipo)} className="flex-1 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400 py-1.5 rounded">Aprobar</button><button onClick={()=>handleAprobar(s.id, s.empleadoUid, s.diasSolicitados, 'rechazada', s.tipo)} className="flex-1 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400 py-1.5 rounded">Rechazar</button></div>
-                  </div>
-              ))}</div>
-            </div>
-          )}
-        </div>
-        <div className="border dark:border-slate-700 rounded-xl overflow-hidden w-full"><div className="bg-gray-50 dark:bg-slate-900/50 p-4 border-b dark:border-slate-700"><h3 className="font-semibold">Ausencias Aprobadas (Equipo)</h3></div>
-          <div className="p-4 overflow-x-auto"><table className="w-full text-left text-sm">
-            <thead><tr className="text-xs text-gray-400 uppercase border-b dark:border-slate-700"><th className="pb-2">Empleado</th><th className="pb-2">Fechas</th><th className="pb-2 text-right">Días</th></tr></thead>
-            <tbody>{aprobadas.map(vac => (<tr key={vac.id} className="border-b border-gray-50 dark:border-slate-700/50"><td className="py-2 flex gap-2 items-center"><img src={vac.photoURL || `https://ui-avatars.com/api/?name=${vac.nombreEmpleado}`} className="w-6 h-6 rounded-full object-cover" alt=""/>{vac.nombreEmpleado}</td><td className="py-2">{formatDate(vac.fechaInicio)} - {formatDate(vac.fechaFin)}</td><td className="py-2 text-right font-bold text-blue-500">{vac.diasSolicitados}d</td></tr>))}</tbody>
-          </table></div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// --- TEAM STATUS ---
-function TeamStatus({ lang, t }) {
-  const [team, setTeam] = useState([]);
-  useEffect(() => {
-    const un = onSnapshot(collection(db, 'usuarios'), snap => setTeam(snap.docs.map(d => ({ uid: d.id, ...d.data() })).filter(u => u.role === 'user')));
-    return () => un();
-  }, []);
-  return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden mt-6">
-      <div className="bg-indigo-50 dark:bg-indigo-900/30 p-4 border-b dark:border-slate-700 flex items-center gap-2"><Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /><h3 className="font-bold text-indigo-900 dark:text-indigo-300">{t[lang].teamStatus}</h3></div>
-      <div className="p-0 overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50 dark:bg-slate-900/50 text-gray-500"><tr className="border-b dark:border-slate-700"><th className="p-3 pl-6">Empleado</th><th className="p-3 text-center">Estado</th><th className="p-3">Proyecto</th></tr></thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-slate-700">{team.map(u => (
-              <tr key={u.uid} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                <td className="p-3 pl-6 font-medium flex items-center gap-2"><img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.nombre}`} className="w-6 h-6 rounded-full object-cover" alt=""/>{u.nombre}</td>
-                <td className="p-3 text-center"><span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ${u.isClockedIn ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300'}`}><span className={`w-1.5 h-1.5 rounded-full ${u.isClockedIn ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>{u.isClockedIn ? t[lang].active : t[lang].inactive}</span></td>
-                <td className="p-3 text-gray-600 dark:text-gray-400">{u.isClockedIn && u.proyectoActual ? <span className="flex items-center gap-1"><FolderKanban className="w-3.5 h-3.5 text-indigo-400"/> {u.proyectoActual}</span> : '-'}</td>
-              </tr>
-          ))}</tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-// --- PANEL DE ADMINISTRADOR ---
-function AdminDashboard({ adminUser, config, lang, t }) {
-  const [users, setUsers] = useState([]);
-  const [showAdd, setShowAdd] = useState(false);
-  const [bonoInput, setBonoInput] = useState(config?.bono_hora || 8);
-
-  useEffect(() => {
-    const un = onSnapshot(collection(db, 'usuarios'), snap => setUsers(snap.docs.map(d => ({ uid: d.id, ...d.data() })).filter(u => u.uid !== adminUser.uid && u.role !== 'admin')));
-    return () => un();
-  }, [adminUser.uid]);
-
-  const updateConfig = async () => { await updateDoc(doc(db, 'config', 'general'), { bono_hora: Number(bonoInput) }); alert("Precio de hora extra actualizado."); };
-
-  const handleCreateUser = async (e) => {
-    e.preventDefault(); const fd = new FormData(e.target);
-    try {
-      const secApp = initializeApp(firebaseConfig, "SecApp"); const secAuth = getAuth(secApp);
-      const uc = await createUserWithEmailAndPassword(secAuth, fd.get('c'), fd.get('p'));
-      await signOut(secAuth); await deleteApp(secApp);
-      await setDoc(doc(db, 'usuarios', uc.user.uid), { nombre: fd.get('n'), correo: fd.get('c'), puesto: fd.get('pu'), empleadoId: fd.get('id'), horario_definido: fd.get('h'), fecha_inicio_contrato: fd.get('f'), role: fd.get('r'), dias_vacaciones_gastados: 0, total_horas_semana: 0, isClockedIn: false, clockInTime: null, ultimaUbicacion: null, proyectoActual: null, horas_hoy: 0, fecha_ultimo_fichaje: '' });
-      setShowAdd(false); alert("¡Creado!");
-    } catch (err) { alert("Error: " + err.message); }
-  };
-
-  const exportToCSV = () => {
-    const head = ['Nombre', 'Correo', 'Rol', 'Puesto', 'ID', 'Hrs Sem.', 'Vac. Disp.', 'Estado', 'Proyecto', 'GPS'];
-    const rows = users.map(u => {
-      const dDisp = (getMonthsDiff(u.fecha_inicio_contrato)*2) - (u.dias_vacaciones_gastados||0);
-      return [`"${u.nombre}"`, `"${u.correo}"`, `"${u.role}"`, `"${u.puesto}"`, `"${u.empleadoId}"`, (u.total_horas_semana||0).toFixed(1), dDisp, u.isClockedIn ? 'Trabajando' : 'Inactivo', u.isClockedIn ? `"${u.proyectoActual||'-'}"` : '"-"', u.ultimaUbicacion ? `"${u.ultimaUbicacion.lat},${u.ultimaUbicacion.lng}"` : '"-"'].join(',');
-    });
-    const link = document.createElement("a"); link.setAttribute("href", encodeURI("data:text/csv;charset=utf-8," + [head.join(','), ...rows].join('\n'))); link.setAttribute("download", `informe.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link);
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
-        <div><h1 className="text-2xl font-bold flex items-center gap-2"><Users className="w-6 h-6 text-indigo-600" /> {t[lang].adminPanel}</h1></div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900 p-2 rounded-lg border dark:border-slate-700">
-            <label className="text-xs font-bold text-gray-500">Valor Hora Extra (€):</label>
-            <input type="number" value={bonoInput} onChange={e=>setBonoInput(e.target.value)} className="w-16 px-2 py-1 text-sm border rounded dark:bg-slate-800 dark:border-slate-600" />
-            <button onClick={updateConfig} className="bg-indigo-600 text-white px-3 py-1 rounded text-xs font-bold">Guardar</button>
+      {/* INPUT separado visualmente del botón flotante */}
+      <div className="p-3 bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700">
+        {file && (
+          <div className="flex items-center gap-2 text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-lg mb-2">
+            <Paperclip className="w-3 h-3" /> {file.name}
+            <button onClick={() => setFile(null)} className="ml-auto text-red-400"><X className="w-3 h-3" /></button>
           </div>
-          <button onClick={exportToCSV} className="text-green-700 bg-green-50 dark:bg-green-900/30 px-4 py-2.5 rounded-lg font-medium border border-green-200 dark:border-green-800 flex items-center gap-2"><Download className="w-4 h-4" /> CSV</button>
-          <button onClick={() => setShowAdd(!showAdd)} className="text-white px-5 py-2.5 rounded-lg font-medium bg-indigo-600 flex items-center gap-2"><Plus className="w-4 h-4" /> Empleado</button>
-        </div>
-      </div>
-      
-      {showAdd && (
-        <form onSubmit={handleCreateUser} className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-5">
-          <select name="r" className="border dark:border-slate-600 dark:bg-slate-700 p-2 rounded w-full"><option value="user">Empleado</option><option value="supervisor">Supervisor</option><option value="rh">Recursos Humanos</option></select>
-          <input name="n" required placeholder="Nombre" className="border dark:border-slate-600 dark:bg-slate-700 p-2 rounded w-full" />
-          <input name="c" required type="email" placeholder="Correo" className="border dark:border-slate-600 dark:bg-slate-700 p-2 rounded w-full" />
-          <input name="p" required placeholder="Contraseña" minLength="6" className="border dark:border-slate-600 dark:bg-slate-700 p-2 rounded w-full" />
-          <input name="pu" required placeholder="Puesto" className="border dark:border-slate-600 dark:bg-slate-700 p-2 rounded w-full" />
-          <input name="id" required placeholder="ID (A003-XXX)" className="border dark:border-slate-600 dark:bg-slate-700 p-2 rounded w-full" />
-          <input name="f" required type="date" className="border dark:border-slate-600 dark:bg-slate-700 p-2 rounded w-full" />
-          <input name="h" required defaultValue="09:00 - 17:00" className="border dark:border-slate-600 dark:bg-slate-700 p-2 rounded w-full" />
-          <button type="submit" className="col-span-full bg-indigo-600 text-white py-3 rounded-lg font-bold">Crear Ficha</button>
+        )}
+        <form onSubmit={handleSend} className="flex gap-2 items-center">
+          <button type="button" onClick={() => fileInputRef.current?.click()} className="text-gray-400 hover:text-indigo-500 transition flex-shrink-0">
+            <Paperclip className="w-4 h-4" />
+          </button>
+          <input type="file" ref={fileInputRef} className="hidden" onChange={e => setFile(e.target.files[0])} />
+          <input
+            type="text" value={text} onChange={e => setText(e.target.value)}
+            placeholder={T.message}
+            className="flex-1 bg-gray-100 dark:bg-slate-700 dark:text-white rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+          />
+          <button type="submit" disabled={uploading || (!text.trim() && !file)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full transition disabled:opacity-40 flex-shrink-0">
+            <Send className="w-4 h-4" />
+          </button>
         </form>
-      )}
-
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden p-4">
-         <table className="w-full text-left text-sm">
-           <thead><tr className="border-b dark:border-slate-700 text-gray-500"><th className="pb-2">Empleado</th><th className="pb-2 text-center">Horas Sem.</th><th className="pb-2 text-center">Estado</th><th className="pb-2 text-right">Borrar</th></tr></thead>
-           <tbody>{users.map(u => (
-              <tr key={u.uid} className="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                <td className="py-3 flex gap-3 items-center"><img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.nombre}`} className="w-8 h-8 rounded-full object-cover" alt=""/><div><p className="font-bold">{u.nombre} <span className="text-[10px] text-indigo-500 uppercase">{u.role}</span></p></div></td>
-                <td className="py-3 text-center font-bold">{(u.total_horas_semana||0).toFixed(1)}h</td>
-                <td className="py-3 text-center"><span className={`px-2 py-1 rounded-full text-xs font-bold ${u.isClockedIn ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-slate-700'}`}>{u.isClockedIn ? 'Activo' : 'Inactivo'}</span></td>
-                <td className="py-3 text-right"><button onClick={async () => { if(window.confirm('¿Borrar?')) await deleteDoc(doc(db, 'usuarios', u.uid)); }} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-1 rounded"><Trash2 className="w-4 h-4"/></button></td>
-              </tr>
-           ))}</tbody>
-         </table>
       </div>
     </div>
   );
