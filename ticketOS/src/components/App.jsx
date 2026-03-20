@@ -62,113 +62,488 @@ const LANGS = {
   es: {
     flag: 'es',
     name: 'Español',
-    greeting: 'Hola', logout: 'Cerrar sesión',
-    tabStatus: 'Estado', tabAbsence: 'Ausencias', tabProjects: 'Proyectos',
-    tabReports: 'Informes', tabTeam: 'Equipo',
-    status: 'Estado Actual', active: 'Trabajando', inactive: 'Inactivo',
-    clockIn: 'Fichar Entrada', clockOut: 'Terminar Jornada',
-    updateEntry: 'Actualizar entrada', save: 'Guardar',
-    dailyLimit: 'Jornada Diaria (8h)', weeklyLimit: 'Total Semanal',
-    vacations: 'Días Disponibles', bonus: 'Bono Acumulado',
-    vacLimit: 'Límite', workMode: 'Modalidad', remote: 'Teletrabajo',
-    office: 'Oficina', schedule: 'Horario', department: 'Departamento',
-    absence: 'Gestión de Ausencias', newRequest: 'Nueva Solicitud',
-    sendRequest: 'Enviar Solicitud', myHistory: 'Mi Historial',
+    greeting: 'Hola',
+    logout: 'Cerrar sesión',
+    tabStatus: 'Estado',
+    tabAbsence: 'Ausencias',
+    tabProjects: 'Proyectos',
+    tabReports: 'Informes',
+    tabTeam: 'Equipo',
+    status: 'Estado Actual',
+    active: 'Trabajando',
+    inactive: 'Inactivo',
+    clockIn: 'Fichar Entrada',
+    clockOut: 'Terminar Jornada',
+    updateEntry: 'Actualizar entrada',
+    save: 'Guardar',
+    dailyLimit: 'Jornada Diaria (8h)',
+    weeklyLimit: 'Total Semanal',
+    vacations: 'Días Disponibles',
+    bonus: 'Bono Acumulado',
+    vacLimit: 'Límite',
+    workMode: 'Modalidad',
+    remote: 'Teletrabajo',
+    office: 'Oficina',
+    schedule: 'Horario',
+    department: 'Departamento',
+    absence: 'Gestión de Ausencias',
+    newRequest: 'Nueva Solicitud',
+    sendRequest: 'Enviar Solicitud',
+    myHistory: 'Mi Historial',
     teamApproved: 'Ausencias Aprobadas (Equipo)',
-    pending: 'Pendientes', approve: 'Aprobar', reject: 'Rechazar',
-    medicalLeave: 'Baja Médica', medicalAppt: 'Cita Médica',
-    invalidDates: 'Fechas inválidas', requestSent: 'Solicitud enviada',
-    adminPanel: 'Panel de Administración', employees: 'Empleados',
-    reports: 'Informes', departments: 'Departamentos',
-    addEmployee: 'Añadir Empleado', exportCSV: 'Exportar CSV',
-    teamStatus: 'Estado del Equipo', configSaved: 'Configuración guardada',
-    extraHourValue: 'Valor Hora Extra (€)', vacDaysLimit: 'Límite días vacaciones',
+    pending: 'Pendientes',
+    approve: 'Aprobar',
+    reject: 'Rechazar',
+    medicalLeave: 'Baja Médica',
+    medicalAppt: 'Cita Médica',
+    invalidDates: 'Fechas inválidas',
+    requestSent: 'Solicitud enviada',
+    adminPanel: 'Panel de Administración',
+    employees: 'Empleados',
+    reports: 'Informes',
+    departments: 'Departamentos',
+    addEmployee: 'Añadir Empleado',
+    exportCSV: 'Exportar CSV',
+    teamStatus: 'Estado del Equipo',
+    configSaved: 'Configuración guardada',
+    extraHourValue: 'Valor Hora Extra (€)',
+    vacDaysLimit: 'Límite días vacaciones',
     saveChanges: 'Guardar cambios',
-    hoursProject: 'Horas por Proyecto', upload: 'Subir archivo',
+    hoursProject: 'Horas por Proyecto',
+    upload: 'Subir archivo',
     advancedReports: 'Informes Avanzados',
-    contacts: 'Contactos', message: 'Mensaje...',
-    emailSent: 'Email enviado', viewMap: 'Ver Mapa',
+    contacts: 'Contactos',
+    message: 'Mensaje...',
+    emailSent: 'Email enviado',
+    viewMap: 'Ver Mapa',
     projects: 'Proyectos',
     listaProyectos: ['Tareas Generales', 'Desarrollo Frontend', 'Desarrollo Backend', 'Soporte Técnico', 'Reuniones de Equipo', 'Formación / I+D', 'Gestión / Administración'],
     roles: { user: 'Empleado', supervisor: 'Supervisor', rh: 'Recursos Humanos' },
-    viewProfile: 'Ver Perfil', close: 'Cerrar', employeeDetails: 'Detalles del Empleado',
+    viewProfile: 'Ver Perfil',
+    close: 'Cerrar',
+    employeeDetails: 'Detalles del Empleado',
     gps: 'GPS',
     action: 'Acción',
     view: 'Ver',
+    // NUEVAS CLAVES
+    loginEmail: 'Correo',
+    loginPassword: 'Contraseña',
+    loginButton: 'Iniciar Sesión',
+    loginSigningIn: 'Iniciando...',
+    loginInvalid: 'Credenciales incorrectas.',
+    loginSubtitle: 'Plataforma de Gestión Empresarial',
+    darkModeTooltip: 'Modo oscuro',
+    lightModeTooltip: 'Modo claro',
+    premiumBadge: 'PREMIUM',
+    maxSizeError: 'Máx 5 MB',
+    photoUpdated: 'Foto actualizada ✓',
+    photoError: 'Error al subir imagen',
+    clockInError: 'Error al fichar',
+    generalError: 'Error',
+    changePhoto: 'Cambiar',
+    entryLabel: 'Entrada',
+    saveButton: 'Guardar',
+    idLabel: 'ID',
+    overtimeWarning: '⚠️ {hours}h hoy — superaste las 8h',
+    tableEmployees: 'Empleados',
+    tableStatus: 'Estado',
+    tableProjects: 'Proyectos',
+    tableGPS: 'GPS',
+    tableAction: 'Acción',
+    viewProfileButton: 'Ver Perfil',
+    closeButton: 'Cerrar',
+    employeeDetailsTitle: 'Detalles del Empleado',
+    employeeCount: '{count} empleados · sysTicket Premium',
+    addEmployeeButton: 'Añadir Empleado',
+    createEmployeeButton: 'Crear Empleado',
+    roleLabel: 'Rol',
+    workModeLabel: 'Modalidad',
+    departmentLabel: 'Departamento',
+    noDepartment: 'Sin departamento',
+    fullNameLabel: 'Nombre completo',
+    emailLabel: 'Correo electrónico',
+    passwordLabel: 'Contraseña (mín 6)',
+    positionLabel: 'Puesto / Cargo',
+    startDateLabel: 'Inicio contrato',
+    scheduleLabel: 'Horario',
+    employeeCreated: 'Empleado creado ✓',
+    errorPrefix: 'Error: ',
+    deleteConfirm: '¿Eliminar empleado?',
+    configTab: 'Config',
+    tableWorkMode: 'Modalidad',
+    tableHoursWeek: 'Hrs Sem.',
+    tableGPSLink: 'Ver',
+    workModeOffice: 'Oficina',
+    workModeRemote: 'Teletrabajo',
+    deleteButton: 'Borrar',
+    departmentPlaceholder: 'Nombre del departamento',
+    addButton: 'Añadir',
+    departmentCreated: 'Departamento creado',
+    totalEmployees: 'Total empleados',
+    workingNow: 'Trabajando ahora',
+    totalHoursWeek: 'Horas sem. total',
+    avgHoursPerEmployee: 'Media h/empleado',
+    reportEmployee: 'Empleado',
+    reportHours: 'Horas',
+    reportStatus: 'Estado',
+    reportVacationDays: 'Vac.',
+    noData: 'Sin datos aún.',
+    uploadSuccess: 'Archivo subido ✓',
+    uploadError: 'Error al subir',
+    viewLink: 'Ver',
+    reportDate: 'Fecha',
+    reportClockIn: 'Entrada',
+    reportClockOut: 'Salida',
+    reportProject: 'Proyecto',
+    inProgress: 'En curso',
+    vacationOption: '🏖 Vacaciones',
+    medicalLeaveOption: '🏥 {medicalLeave}',
+    medicalApptOption: '🩺 {medicalAppt}',
+    daysUnit: 'días',
+    viewJustification: 'Ver justificante',
+    noPendingRequests: 'Sin solicitudes pendientes ✓',
+    requestApproved: '✅ Solicitud aprobada',
+    requestRejected: '❌ Solicitud rechazada',
+    noContacts: 'Sin contactos',
+    fileAttachment: 'Archivo',
+    //Encabezados de la tabla aprobadas
+    reportType: 'Tipo',
+    reportDates: 'Fechas',
+    reportDays: 'Días',
+    //Ausencias aprobadas
+    typeVacation: 'Vacaciones',
+    typeMedicalLeave: 'Baja médica',
+    typeMedicalAppt: 'Cita médica',
+    statusApproved: 'Aprobada',
+    statusRejected: 'Rechazada',
+    statusPending: 'Pendiente',
+    //Adjunto archivos
+    selectFile: 'Seleccionar archivo',
+    noFileSelected: 'Ningún archivo seleccionado',
   },
   en: {
     flag: 'us',
     name: 'English',
-    greeting: 'Hello', logout: 'Logout',
-    tabStatus: 'Status', tabAbsence: 'Absences', tabProjects: 'Projects',
-    tabReports: 'Reports', tabTeam: 'Team',
-    status: 'Current Status', active: 'Working', inactive: 'Inactive',
-    clockIn: 'Clock In', clockOut: 'Clock Out',
-    updateEntry: 'Update entry', save: 'Save',
-    dailyLimit: 'Daily Shift (8h)', weeklyLimit: 'Weekly Total',
-    vacations: 'Days Available', bonus: 'Earned Bonus',
-    vacLimit: 'Limit', workMode: 'Work mode', remote: 'Remote',
-    office: 'Office', schedule: 'Schedule', department: 'Department',
-    absence: 'Absence Management', newRequest: 'New Request',
-    sendRequest: 'Send Request', myHistory: 'My History',
+    greeting: 'Hello',
+    logout: 'Logout',
+    tabStatus: 'Status',
+    tabAbsence: 'Absences',
+    tabProjects: 'Projects',
+    tabReports: 'Reports',
+    tabTeam: 'Team',
+    status: 'Current Status',
+    active: 'Working',
+    inactive: 'Inactive',
+    clockIn: 'Clock In',
+    clockOut: 'Clock Out',
+    updateEntry: 'Update entry',
+    save: 'Save',
+    dailyLimit: 'Daily Shift (8h)',
+    weeklyLimit: 'Weekly Total',
+    vacations: 'Days Available',
+    bonus: 'Earned Bonus',
+    vacLimit: 'Limit',
+    workMode: 'Work mode',
+    remote: 'Remote',
+    office: 'Office',
+    schedule: 'Schedule',
+    department: 'Department',
+    absence: 'Absence Management',
+    newRequest: 'New Request',
+    sendRequest: 'Send Request',
+    myHistory: 'My History',
     teamApproved: 'Approved Absences (Team)',
-    pending: 'Pending', approve: 'Approve', reject: 'Reject',
-    medicalLeave: 'Medical Leave', medicalAppt: 'Medical Appointment',
-    invalidDates: 'Invalid dates', requestSent: 'Request sent',
-    adminPanel: 'Admin Dashboard', employees: 'Employees',
-    reports: 'Reports', departments: 'Departments',
-    addEmployee: 'Add Employee', exportCSV: 'Export CSV',
-    teamStatus: 'Team Status', configSaved: 'Config saved',
-    extraHourValue: 'Extra Hour Value (€)', vacDaysLimit: 'Vacation days limit',
+    pending: 'Pending',
+    approve: 'Approve',
+    reject: 'Reject',
+    medicalLeave: 'Medical Leave',
+    medicalAppt: 'Medical Appointment',
+    invalidDates: 'Invalid dates',
+    requestSent: 'Request sent',
+    adminPanel: 'Admin Dashboard',
+    employees: 'Employees',
+    reports: 'Reports',
+    departments: 'Departments',
+    addEmployee: 'Add Employee',
+    exportCSV: 'Export CSV',
+    teamStatus: 'Team Status',
+    configSaved: 'Config saved',
+    extraHourValue: 'Extra Hour Value (€)',
+    vacDaysLimit: 'Vacation days limit',
     saveChanges: 'Save changes',
-    hoursProject: 'Hours by Project', upload: 'Upload file',
+    hoursProject: 'Hours by Project',
+    upload: 'Upload file',
     advancedReports: 'Advanced Reports',
-    contacts: 'Contacts', message: 'Message...',
-    emailSent: 'Email sent', viewMap: 'View Map',
+    contacts: 'Contacts',
+    message: 'Message...',
+    emailSent: 'Email sent',
+    viewMap: 'View Map',
     projects: 'Projects',
     listaProyectos: ['General Tasks', 'Frontend Dev', 'Backend Dev', 'Tech Support', 'Team Meetings', 'Training / R&D', 'Management'],
     roles: { user: 'Employee', supervisor: 'Supervisor', rh: 'HR' },
-    viewProfile: 'View Profile', close: 'Close', employeeDetails: 'Employee Details',
+    viewProfile: 'View Profile',
+    close: 'Close',
+    employeeDetails: 'Employee Details',
     gps: 'GPS',
     action: 'Action',
     view: 'View',
+    // NUEVAS CLAVES
+    loginEmail: 'Email',
+    loginPassword: 'Password',
+    loginButton: 'Sign In',
+    loginSigningIn: 'Signing in...',
+    loginInvalid: 'Invalid credentials.',
+    loginSubtitle: 'Business Management Platform',
+    darkModeTooltip: 'Dark mode',
+    lightModeTooltip: 'Light mode',
+    premiumBadge: 'PREMIUM',
+    maxSizeError: 'Max 5 MB',
+    photoUpdated: 'Photo updated ✓',
+    photoError: 'Error uploading image',
+    clockInError: 'Error clocking in',
+    generalError: 'Error',
+    changePhoto: 'Change',
+    entryLabel: 'Clock-in',
+    saveButton: 'Save',
+    idLabel: 'ID',
+    overtimeWarning: '⚠️ {hours}h today — you exceeded 8h',
+    tableEmployees: 'Employees',
+    tableStatus: 'Status',
+    tableProjects: 'Projects',
+    tableGPS: 'GPS',
+    tableAction: 'Action',
+    viewProfileButton: 'View Profile',
+    closeButton: 'Close',
+    employeeDetailsTitle: 'Employee Details',
+    employeeCount: '{count} employees · sysTicket Premium',
+    addEmployeeButton: 'Add Employee',
+    createEmployeeButton: 'Create Employee',
+    roleLabel: 'Role',
+    workModeLabel: 'Work mode',
+    departmentLabel: 'Department',
+    noDepartment: 'No department',
+    fullNameLabel: 'Full name',
+    emailLabel: 'Email',
+    passwordLabel: 'Password (min 6)',
+    positionLabel: 'Position',
+    startDateLabel: 'Start date',
+    scheduleLabel: 'Schedule',
+    employeeCreated: 'Employee created ✓',
+    errorPrefix: 'Error: ',
+    deleteConfirm: 'Delete employee?',
+    configTab: 'Config',
+    tableWorkMode: 'Work mode',
+    tableHoursWeek: 'Hrs Week',
+    tableGPSLink: 'View',
+    workModeOffice: 'Office',
+    workModeRemote: 'Remote',
+    deleteButton: 'Delete',
+    departmentPlaceholder: 'Department name',
+    addButton: 'Add',
+    departmentCreated: 'Department created',
+    totalEmployees: 'Total employees',
+    workingNow: 'Working now',
+    totalHoursWeek: 'Total weekly hours',
+    avgHoursPerEmployee: 'Avg hours/employee',
+    reportEmployee: 'Employee',
+    reportHours: 'Hours',
+    reportStatus: 'Status',
+    reportVacationDays: 'Vac.',
+    noData: 'No data yet.',
+    uploadSuccess: 'File uploaded ✓',
+    uploadError: 'Error uploading',
+    viewLink: 'View',
+    reportDate: 'Date',
+    reportClockIn: 'Clock In',
+    reportClockOut: 'Clock Out',
+    reportProject: 'Project',
+    inProgress: 'In progress',
+    vacationOption: '🏖 Vacation',
+    medicalLeaveOption: '🏥 {medicalLeave}',
+    medicalApptOption: '🩺 {medicalAppt}',
+    daysUnit: 'days',
+    viewJustification: 'View proof',
+    noPendingRequests: 'No pending requests ✓',
+    requestApproved: '✅ Request approved',
+    requestRejected: '❌ Request rejected',
+    noContacts: 'No contacts',
+    fileAttachment: 'File',
+    //Encabezados de la tabla aprobadas
+    reportType: 'Type',
+    reportDates: 'Dates',
+    reportDays: 'Days',
+    //Ausencias aprobadas
+    typeVacation: 'Vacation',
+    typeMedicalLeave: 'Medical leave',
+    typeMedicalAppt: 'Medical appointment',
+    statusApproved: 'Approved',
+    statusRejected: 'Rejected',
+    statusPending: 'Pending',
+    //Adjunto archivos
+    selectFile: 'Select file',
+    noFileSelected: 'No file selected',
   },
   fr: {
     flag: 'fr',
     name: 'Français',
-    greeting: 'Bonjour', logout: 'Déconnexion',
-    tabStatus: 'Statut', tabAbsence: 'Absences', tabProjects: 'Projets',
-    tabReports: 'Rapports', tabTeam: 'Équipe',
-    status: 'Statut actuel', active: 'En travail', inactive: 'Inactif',
-    clockIn: 'Pointer entrée', clockOut: 'Terminer journée',
-    updateEntry: "Modifier l'heure", save: 'Enregistrer',
-    dailyLimit: 'Journée (8h)', weeklyLimit: 'Total hebdo',
-    vacations: 'Jours disponibles', bonus: 'Bonus accumulé',
-    vacLimit: 'Limite', workMode: 'Mode travail', remote: 'Télétravail',
-    office: 'Bureau', schedule: 'Horaire', department: 'Département',
-    absence: 'Gestion des absences', newRequest: 'Nouvelle demande',
-    sendRequest: 'Envoyer', myHistory: 'Mon historique',
+    greeting: 'Bonjour',
+    logout: 'Déconnexion',
+    tabStatus: 'Statut',
+    tabAbsence: 'Absences',
+    tabProjects: 'Projets',
+    tabReports: 'Rapports',
+    tabTeam: 'Équipe',
+    status: 'Statut actuel',
+    active: 'En travail',
+    inactive: 'Inactif',
+    clockIn: 'Pointer entrée',
+    clockOut: 'Terminer journée',
+    updateEntry: "Modifier l'heure",
+    save: 'Enregistrer',
+    dailyLimit: 'Journée (8h)',
+    weeklyLimit: 'Total hebdo',
+    vacations: 'Jours disponibles',
+    bonus: 'Bonus accumulé',
+    vacLimit: 'Limite',
+    workMode: 'Mode travail',
+    remote: 'Télétravail',
+    office: 'Bureau',
+    schedule: 'Horaire',
+    department: 'Département',
+    absence: 'Gestion des absences',
+    newRequest: 'Nouvelle demande',
+    sendRequest: 'Envoyer',
+    myHistory: 'Mon historique',
     teamApproved: 'Absences approuvées (équipe)',
-    pending: 'En attente', approve: 'Approuver', reject: 'Refuser',
-    medicalLeave: 'Congé maladie', medicalAppt: 'Rendez-vous médical',
-    invalidDates: 'Dates invalides', requestSent: 'Demande envoyée',
-    adminPanel: "Panneau d'admin", employees: 'Employés',
-    reports: 'Rapports', departments: 'Départements',
-    addEmployee: 'Ajouter employé', exportCSV: 'Exporter CSV',
-    teamStatus: "État de l'équipe", configSaved: 'Config sauvegardée',
-    extraHourValue: 'Valeur heure supp. (€)', vacDaysLimit: 'Limite jours congés',
+    pending: 'En attente',
+    approve: 'Approuver',
+    reject: 'Refuser',
+    medicalLeave: 'Congé maladie',
+    medicalAppt: 'Rendez-vous médical',
+    invalidDates: 'Dates invalides',
+    requestSent: 'Demande envoyée',
+    adminPanel: "Panneau d'admin",
+    employees: 'Employés',
+    reports: 'Rapports',
+    departments: 'Départements',
+    addEmployee: 'Ajouter employé',
+    exportCSV: 'Exporter CSV',
+    teamStatus: "État de l'équipe",
+    configSaved: 'Config sauvegardée',
+    extraHourValue: 'Valeur heure supp. (€)',
+    vacDaysLimit: 'Limite jours congés',
     saveChanges: 'Sauvegarder',
-    hoursProject: 'Heures par projet', upload: 'Télécharger fichier',
+    hoursProject: 'Heures par projet',
+    upload: 'Télécharger fichier',
     advancedReports: 'Rapports avancés',
-    contacts: 'Contacts', message: 'Message...',
-    emailSent: 'Email envoyé', viewMap: 'Voir la carte',
+    contacts: 'Contacts',
+    message: 'Message...',
+    emailSent: 'Email envoyé',
+    viewMap: 'Voir la carte',
     projects: 'Projets',
     listaProyectos: ['Tâches générales', 'Dev Frontend', 'Dev Backend', 'Support technique', 'Réunions', 'Formation / R&D', 'Gestion / Admin'],
     roles: { user: 'Employé', supervisor: 'Superviseur', rh: 'RH' },
-    viewProfile: 'Voir le profil', close: 'Fermer', employeeDetails: 'Détails de l\'employé',
+    viewProfile: 'Voir le profil',
+    close: 'Fermer',
+    employeeDetails: "Détails de l'employé",
     gps: 'GPS',
     action: 'Action',
     view: 'Voir',
+    // NUEVAS CLAVES
+    loginEmail: 'Email',
+    loginPassword: 'Mot de passe',
+    loginButton: 'Connexion',
+    loginSigningIn: 'Connexion en cours...',
+    loginInvalid: 'Identifiants incorrects.',
+    loginSubtitle: "Plateforme de gestion d'entreprise",
+    darkModeTooltip: 'Mode sombre',
+    lightModeTooltip: 'Mode clair',
+    premiumBadge: 'PREMIUM',
+    maxSizeError: 'Max 5 Mo',
+    photoUpdated: 'Photo mise à jour ✓',
+    photoError: 'Erreur lors du téléchargement',
+    clockInError: 'Erreur de pointage',
+    generalError: 'Erreur',
+    changePhoto: 'Changer',
+    entryLabel: 'Entrée',
+    saveButton: 'Enregistrer',
+    idLabel: 'ID',
+    overtimeWarning: "⚠️ {hours}h aujourd'hui — vous avez dépassé 8h",
+    tableEmployees: 'Employés',
+    tableStatus: 'Statut',
+    tableProjects: 'Projets',
+    tableGPS: 'GPS',
+    tableAction: 'Action',
+    viewProfileButton: 'Voir le profil',
+    closeButton: 'Fermer',
+    employeeDetailsTitle: "Détails de l'employé",
+    employeeCount: '{count} employés · sysTicket Premium',
+    addEmployeeButton: 'Ajouter un employé',
+    createEmployeeButton: 'Créer un employé',
+    roleLabel: 'Rôle',
+    workModeLabel: 'Mode de travail',
+    departmentLabel: 'Département',
+    noDepartment: 'Aucun département',
+    fullNameLabel: 'Nom complet',
+    emailLabel: 'Email',
+    passwordLabel: 'Mot de passe (min 6)',
+    positionLabel: 'Poste',
+    startDateLabel: 'Date de début',
+    scheduleLabel: 'Horaire',
+    employeeCreated: 'Employé créé ✓',
+    errorPrefix: 'Erreur : ',
+    deleteConfirm: "Supprimer l'employé ?",
+    configTab: 'Config',
+    tableWorkMode: 'Mode de travail',
+    tableHoursWeek: 'Heures/sem.',
+    tableGPSLink: 'Voir',
+    workModeOffice: 'Bureau',
+    workModeRemote: 'Télétravail',
+    deleteButton: 'Supprimer',
+    departmentPlaceholder: 'Nom du département',
+    addButton: 'Ajouter',
+    departmentCreated: 'Département créé',
+    totalEmployees: 'Total employés',
+    workingNow: 'En travail maintenant',
+    totalHoursWeek: 'Heures totales semaine',
+    avgHoursPerEmployee: 'Moyenne heures/employé',
+    reportEmployee: 'Employé',
+    reportHours: 'Heures',
+    reportStatus: 'Statut',
+    reportVacationDays: 'Congés',
+    noData: 'Aucune donnée pour le moment.',
+    uploadSuccess: 'Fichier téléchargé ✓',
+    uploadError: 'Erreur de téléchargement',
+    viewLink: 'Voir',
+    reportDate: 'Date',
+    reportClockIn: 'Entrée',
+    reportClockOut: 'Sortie',
+    reportProject: 'Projet',
+    inProgress: 'En cours',
+    vacationOption: '🏖 Vacances',
+    medicalLeaveOption: '🏥 {medicalLeave}',
+    medicalApptOption: '🩺 {medicalAppt}',
+    daysUnit: 'jours',
+    viewJustification: 'Voir justificatif',
+    noPendingRequests: 'Aucune demande en attente ✓',
+    requestApproved: '✅ Demande approuvée',
+    requestRejected: '❌ Demande rejetée',
+    noContacts: 'Aucun contact',
+    fileAttachment: 'Fichier',
+    //Encabezados de la tabla aprobadas
+    reportType: 'Type',
+    reportDates: 'Dates',
+    reportDays: 'Jours',
+    //Ausencias aprobadas
+    typeVacation: 'Vacances',
+    typeMedicalLeave: 'Congé maladie',
+    typeMedicalAppt: 'Rendez-vous médical',
+    statusApproved: 'Approuvée',
+    statusRejected: 'Rejetée',
+    statusPending: 'En attente',
+    //Adjunto archivos
+    selectFile: 'Sélectionner un fichier',
+    noFileSelected: 'Aucun fichier sélectionné',
   },
 };
 
@@ -279,7 +654,7 @@ export default function App() {
     </div>
   );
 
-if (!user) return <LoginScreen darkMode={darkMode} setDarkMode={setDarkMode} />;
+if (!user) return <LoginScreen darkMode={darkMode} setDarkMode={setDarkMode} T={T}/>;
 
   return (
     <>
@@ -437,7 +812,7 @@ if (!user) return <LoginScreen darkMode={darkMode} setDarkMode={setDarkMode} />;
 }
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
-function LoginScreen({ darkMode, setDarkMode }) {
+function LoginScreen({ darkMode, setDarkMode, T }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -450,7 +825,7 @@ function LoginScreen({ darkMode, setDarkMode }) {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch {
-      setError('Credenciales incorrectas.');
+      setError(T.loginInvalid);
     } finally {
       setBusy(false);
     }
@@ -458,14 +833,10 @@ function LoginScreen({ darkMode, setDarkMode }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 p-4 relative transition-colors duration-200">
-      {/* Botón de modo oscuro flotante */}
       <button
-        onClick={() => {
-          console.log('Botón clickeado. darkMode actual:', darkMode);
-          setDarkMode(prev => !prev);
-        }}
+        onClick={() => setDarkMode(prev => !prev)}
         className="absolute top-4 right-4 p-2 rounded-full bg-white/80 dark:bg-slate-800/80 shadow-md hover:scale-105 transition z-10"
-        title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+        title={darkMode ? T.lightModeTooltip : T.darkModeTooltip}
       >
         {darkMode ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5 text-indigo-600" />}
       </button>
@@ -476,8 +847,8 @@ function LoginScreen({ darkMode, setDarkMode }) {
             <Clock className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-2xl font-black text-gray-800 dark:text-white">sysTicket</h1>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Plataforma de Gestión Empresarial</p>
-          <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-bold mt-1">PREMIUM</span>
+          <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">{T.loginSubtitle}</p>
+          <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-bold mt-1">{T.premiumBadge}</span>
         </div>
 
         {error && (
@@ -488,30 +859,32 @@ function LoginScreen({ darkMode, setDarkMode }) {
 
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Correo</label>
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">{T.loginEmail}</label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
               className="w-full border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-white p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-colors"
+              placeholder={T.loginEmail}
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Contraseña</label>
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">{T.loginPassword}</label>
             <input
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
               className="w-full border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-white p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-colors"
+              placeholder={T.loginPassword}
             />
           </div>
           <button
             disabled={busy}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition disabled:opacity-50 shadow-md shadow-indigo-200 dark:shadow-indigo-900/30"
           >
-            {busy ? 'Iniciando...' : 'Iniciar Sesión'}
+            {busy ? T.loginSigningIn : T.loginButton}
           </button>
         </form>
       </div>
@@ -533,15 +906,15 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast, isRe
     if (isReadOnly) return;
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { showToast('Máx 5 MB', 'error'); return; }
+    if (file.size > 5 * 1024 * 1024) { showToast(T.maxSizeError, 'error'); return; }
     setIsUploadingPic(true);
     try {
       const fRef = ref(storage, `perfiles/${userData.uid}_${Date.now()}`);
       await uploadBytes(fRef, file);
       const url = await getDownloadURL(fRef);
       await updateDoc(doc(db, 'usuarios', userData.uid), { photoURL: url });
-      showToast('Foto actualizada ✓');
-    } catch { showToast('Error al subir imagen', 'error'); }
+      showToast(T.photoUpdated);
+    } catch { showToast(T.photoError, 'error'); }
     setIsUploadingPic(false);
   };
 
@@ -571,7 +944,7 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast, isRe
         fecha: new Date().toISOString().split('T')[0],
       });
       showToast(T.clockIn + ' ✓');
-    } catch (err) { console.error(err); showToast('Error al fichar', 'error'); }
+    } catch (err) { console.error(err); showToast(T.clockInError, 'error'); }
     setIsProcessing(false);
   };
 
@@ -593,9 +966,9 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast, isRe
         horas_hoy: horasHoy, fecha_ultimo_fichaje: today,
         ultimaUbicacion: null, proyectoActual: null,
       });
-      if (horasHoy > 8) showToast(`⚠️ ${horasHoy.toFixed(1)}h hoy — superaste las 8h`, 'warning');
+      if (horasHoy > 8) showToast(T.overtimeWarning.replace('{hours}', horasHoy.toFixed(1)), 'warning');
       else              showToast(`${T.clockOut} — ${hrs.toFixed(1)}h`);
-    } catch (err) { console.error(err); showToast('Error', 'error'); }
+    } catch (err) { console.error(err); showToast(T.generalError, 'error'); }
     setIsProcessing(false);
   };
 
@@ -643,7 +1016,7 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast, isRe
               {!isReadOnly && !isAdminView && (
                 <div className="absolute inset-0 rounded-full bg-black/60 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition gap-0.5">
                   <Camera className="w-5 h-5" />
-                  <span className="text-[9px] font-bold">{isUploadingPic ? '...' : 'Cambiar'}</span>
+                  <span className="text-[9px] font-bold">{isUploadingPic ? '...' : T.changePhoto}</span>
                 </div>
               )}
               {!isReadOnly && !isAdminView && <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploadingPic} />}
@@ -653,7 +1026,7 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast, isRe
               {userData.nombre}
               {userData.role === 'supervisor' && <UserCog className="w-4 h-4 text-indigo-500" />}
             </h2>
-            <p className="text-gray-400 text-sm">{userData.puesto || 'Empleado'}</p>
+            <p className="text-gray-400 text-sm">{userData.puesto || T.roles.user}</p>
             <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full mt-1 ${
               userData.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
               : userData.role === 'supervisor' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300'
@@ -662,7 +1035,7 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast, isRe
             }`}>{userData.role}</span>
 
             <div className="w-full mt-4 space-y-2 text-sm border-t dark:border-slate-700 pt-4">
-              <Row icon={<Shield className="w-3.5 h-3.5" />} label="ID">
+              <Row icon={<Shield className="w-3.5 h-3.5" />} label={T.idLabel}>
                 <span className="font-mono text-xs bg-gray-50 dark:bg-slate-700 px-2 py-0.5 rounded">{userData.empleadoId}</span>
               </Row>
               <Row icon={<MapPin className="w-3.5 h-3.5" />} label={T.workMode}>
@@ -729,7 +1102,7 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast, isRe
                   )}
                   {clockInFmt && (
                     <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
-                      <Timer className="w-3 h-3" /> Entrada: {clockInFmt}
+                      <Timer className="w-3 h-3" /> {T.entryLabel}: {clockInFmt}
                       {!isReadOnly && !isAdminView && (
                         <button onClick={() => setEditClockIn(v => !v)} className="ml-1 text-indigo-500 hover:text-indigo-700">
                           <Edit3 className="w-3 h-3" />
@@ -743,7 +1116,7 @@ function UserProfile({ userData, config, T, isAdminView = false, showToast, isRe
                         className="border dark:border-slate-600 dark:bg-slate-700 rounded-lg px-2 py-1 text-xs" />
                       <button onClick={handleUpdateClockIn}
                         className="text-xs bg-indigo-600 text-white px-2 py-1 rounded-lg flex items-center gap-1">
-                        <Save className="w-3 h-3" /> {T.save}
+                        <Save className="w-3 h-3" /> {T.saveButton}
                       </button>
                     </div>
                   )}
@@ -857,11 +1230,11 @@ function TeamStatus({ T }) {
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 dark:bg-slate-900/50 text-xs text-gray-400 uppercase border-b dark:border-slate-700">
               <tr>
-                <th className="p-3 pl-5">{T.employees}</th>
-                <th className="p-3 text-center">{T.status}</th>
-                <th className="p-3">{T.projects}</th>
-                <th className="p-3">{T.gps}</th>
-                <th className="p-3 text-center">{T.action}</th>
+                <th className="p-3 pl-5">{T.tableEmployees}</th>
+                <th className="p-3 text-center">{T.tableStatus}</th>
+                <th className="p-3">{T.tableProjects}</th>
+                <th className="p-3">{T.tableGPS}</th>
+                <th className="p-3 text-center">{T.tableAction}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
@@ -889,14 +1262,14 @@ function TeamStatus({ T }) {
                     {u.isClockedIn && u.ultimaUbicacion
                       ? <a href={`https://www.google.com/maps?q=${u.ultimaUbicacion.lat},${u.ultimaUbicacion.lng}`} target="_blank" rel="noreferrer"
                           className="text-indigo-500 hover:underline text-xs flex items-center gap-1">
-                          <MapPin className="w-3 h-3" /> {T.view}
+                          <MapPin className="w-3 h-3" /> {T.tableGPSLink}
                         </a>
                       : '-'}
                   </td>
                   <td className="p-3 text-center">
                     <button onClick={() => handleViewProfile(u)}
                       className="text-indigo-600 hover:text-indigo-800 text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded-full transition">
-                      {T.viewProfile}
+                      {T.viewProfileButton}
                     </button>
                   </td>
                 </tr>
@@ -910,7 +1283,7 @@ function TeamStatus({ T }) {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedUser(null)}>
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 p-4 flex justify-between items-center">
-              <h2 className="text-xl font-bold">{T.employeeDetails}</h2>
+              <h2 className="text-xl font-bold">{T.employeeDetailsTitle}</h2>
               <button onClick={() => setSelectedUser(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full">
                 <X className="w-5 h-5" />
               </button>
@@ -974,8 +1347,8 @@ function AdminDashboard({ adminUser, config, T, showToast }) {
         horas_hoy: 0, fecha_ultimo_fichaje: '',
       });
       setShowAdd(false);
-      showToast('Empleado creado ✓');
-    } catch (err) { showToast('Error: ' + err.message, 'error'); }
+      showToast(T.employeeCreated);
+    } catch (err) { showToast(T.errorPrefix + err.message, 'error'); }
   };
 
   const exportToCSV = () => {
@@ -1001,7 +1374,7 @@ function AdminDashboard({ adminUser, config, T, showToast }) {
     { id: 'absence',     label: T.tabAbsence || 'Ausencias', icon: <Calendar className="w-4 h-4" /> },
     { id: 'departments', label: T.departments, icon: <Building2 className="w-4 h-4" /> },
     { id: 'reports',     label: T.reports,     icon: <BarChart2 className="w-4 h-4" /> },
-    { id: 'config',      label: 'Config',      icon: <Settings className="w-4 h-4" /> },
+    { id: 'config',      label: T.configTab,   icon: <Settings className="w-4 h-4" /> },
   ];
 
   const handleViewProfile = (user) => {
@@ -1016,7 +1389,9 @@ function AdminDashboard({ adminUser, config, T, showToast }) {
             <h1 className="text-2xl font-black flex items-center gap-2">
               <Shield className="w-6 h-6 text-indigo-600" /> {T.adminPanel}
             </h1>
-            <p className="text-xs text-gray-400 mt-0.5">{users.length} empleados · sysTicket Premium</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {T.employeeCount.replace('{count}', users.length)}
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={exportToCSV}
@@ -1025,7 +1400,7 @@ function AdminDashboard({ adminUser, config, T, showToast }) {
             </button>
             <button onClick={() => setShowAdd(v => !v)}
               className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-md shadow-indigo-200 dark:shadow-none">
-              <Plus className="w-4 h-4" /> {T.addEmployee}
+              <Plus className="w-4 h-4" /> {T.addEmployeeButton}
             </button>
           </div>
         </div>
@@ -1034,34 +1409,34 @@ function AdminDashboard({ adminUser, config, T, showToast }) {
           <form onSubmit={handleCreateUser}
             className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rol</label>
+              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{T.roleLabel}</label>
               <select name="r" className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm custom-select">
-                <option value="user">Empleado</option>
-                <option value="supervisor">Supervisor</option>
-                <option value="rh">Recursos Humanos</option>
+                <option value="user">{T.roles.user}</option>
+                <option value="supervisor">{T.roles.supervisor}</option>
+                <option value="rh">{T.roles.rh}</option>
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Modalidad</label>
+              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{T.workModeLabel}</label>
               <select name="modalidad" className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm custom-select">
-                <option value="office">🏢 Oficina</option>
-                <option value="remote">🏠 Teletrabajo</option>
+                <option value="office">{T.workModeOffice}</option>
+                <option value="remote">{T.workModeRemote}</option>
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Departamento</label>
+              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{T.departmentLabel}</label>
               <select name="dept" className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm custom-select">
-                <option value="">Sin departamento</option>
+                <option value="">{T.noDepartment}</option>
                 {departments.map(d => <option key={d.id} value={d.nombre}>{d.nombre}</option>)}
               </select>
             </div>
             {[
-              { name: 'n',  placeholder: 'Nombre completo',    type: 'text'  },
-              { name: 'c',  placeholder: 'Correo electrónico', type: 'email' },
-              { name: 'p',  placeholder: 'Contraseña (mín 6)', type: 'text', minLength: 6 },
-              { name: 'pu', placeholder: 'Puesto / Cargo',     type: 'text'  },
-              { name: 'f',  placeholder: 'Inicio contrato',    type: 'date'  },
-              { name: 'h',  placeholder: 'Horario',            type: 'text', defaultValue: '09:00 - 17:00' },
+              { name: 'n',  placeholder: T.fullNameLabel,    type: 'text'  },
+              { name: 'c',  placeholder: T.emailLabel,       type: 'email' },
+              { name: 'p',  placeholder: T.passwordLabel,    type: 'text', minLength: 6 },
+              { name: 'pu', placeholder: T.positionLabel,    type: 'text'  },
+              { name: 'f',  placeholder: T.startDateLabel,   type: 'date'  },
+              { name: 'h',  placeholder: T.scheduleLabel,    type: 'text', defaultValue: '09:00 - 17:00' },
             ].map(inp => (
               <div key={inp.name} className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{inp.placeholder}</label>
@@ -1071,7 +1446,7 @@ function AdminDashboard({ adminUser, config, T, showToast }) {
             ))}
             <button type="submit"
               className="col-span-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm transition">
-              Crear Empleado
+              {T.createEmployeeButton}
             </button>
           </form>
         )}
@@ -1098,7 +1473,7 @@ function AdminDashboard({ adminUser, config, T, showToast }) {
               <AbsenceModule currentUser={adminUser} T={T} showToast={showToast} adminMode />
             )}
             {activeTab === 'departments' && (
-              <DepartmentsTab departments={departments} newDept={newDept} setNewDept={setNewDept} showToast={showToast} />
+              <DepartmentsTab departments={departments} newDept={newDept} setNewDept={setNewDept} showToast={showToast} T={T} />
             )}
             {activeTab === 'reports' && (
               <AdminReports users={users} T={T} />
@@ -1129,7 +1504,7 @@ function AdminDashboard({ adminUser, config, T, showToast }) {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedUser(null)}>
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 p-4 flex justify-between items-center">
-              <h2 className="text-xl font-bold">{T.employeeDetails}</h2>
+              <h2 className="text-xl font-bold">{T.employeeDetailsTitle}</h2>
               <button onClick={() => setSelectedUser(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full">
                 <X className="w-5 h-5" />
               </button>
@@ -1159,13 +1534,13 @@ function EmployeeTable({ users, T, departments, onViewProfile }) {
       <table className="w-full text-sm text-left">
         <thead className="text-xs text-gray-400 uppercase border-b dark:border-slate-700">
           <tr>
-            <th className="pb-3">Empleado</th>
-            <th className="pb-3 text-center">Modalidad</th>
-            <th className="pb-3 text-center">Hrs Sem.</th>
-            <th className="pb-3 text-center">Estado</th>
-            <th className="pb-3 text-center">GPS</th>
-            <th className="pb-3 text-center">Acción</th>
-            <th className="pb-3 text-right">Borrar</th>
+            <th className="pb-3">{T.tableEmployees}</th>
+            <th className="pb-3 text-center">{T.tableWorkMode}</th>
+            <th className="pb-3 text-center">{T.tableHoursWeek}</th>
+            <th className="pb-3 text-center">{T.tableStatus}</th>
+            <th className="pb-3 text-center">{T.tableGPS}</th>
+            <th className="pb-3 text-center">{T.tableAction}</th>
+            <th className="pb-3 text-right">{T.deleteButton}</th>
           </tr>
         </thead>
         <tbody>
@@ -1186,8 +1561,8 @@ function EmployeeTable({ users, T, departments, onViewProfile }) {
                   <div className="flex items-center gap-1 justify-center">
                     <select value={editModalidad} onChange={e => setEditModalidad(e.target.value)}
                       className="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 text-xs rounded-lg p-1 custom-select">
-                      <option value="office">🏢 Oficina</option>
-                      <option value="remote">🏠 Teletrabajo</option>
+                      <option value="office">{T.workModeOffice}</option>
+                      <option value="remote">{T.workModeRemote}</option>
                     </select>
                     <button onClick={() => saveModalidad(u.uid)} className="bg-indigo-600 text-white text-xs px-2 py-1 rounded-lg">✓</button>
                     <button onClick={() => setEditUid(null)} className="text-gray-400 text-xs px-1">✕</button>
@@ -1199,7 +1574,7 @@ function EmployeeTable({ users, T, departments, onViewProfile }) {
                         ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
                         : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
                     }`}>
-                    {u.modalidadTrabajo === 'remote' ? <><Wifi className="w-3 h-3" /> Teletrabajo</> : <><Home className="w-3 h-3" /> Oficina</>}
+                    {u.modalidadTrabajo === 'remote' ? <><Wifi className="w-3 h-3" /> {T.workModeRemote}</> : <><Home className="w-3 h-3" /> {T.workModeOffice}</>}
                     <Edit3 className="w-2.5 h-2.5 opacity-60" />
                   </button>
                 )}
@@ -1214,18 +1589,18 @@ function EmployeeTable({ users, T, departments, onViewProfile }) {
                 {u.isClockedIn && u.ultimaUbicacion
                   ? <a href={`https://www.google.com/maps?q=${u.ultimaUbicacion.lat},${u.ultimaUbicacion.lng}`} target="_blank" rel="noreferrer"
                       className="text-indigo-500 hover:underline text-xs flex items-center justify-center gap-1">
-                      <MapPin className="w-3 h-3" /> Ver
+                      <MapPin className="w-3 h-3" /> {T.tableGPSLink}
                     </a>
                   : '-'}
               </td>
               <td className="py-3 text-center">
                 <button onClick={() => onViewProfile(u)}
                   className="text-indigo-600 hover:text-indigo-800 text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded-full transition">
-                  {T.viewProfile || 'Ver perfil'}
+                  {T.viewProfileButton}
                 </button>
               </td>
               <td className="py-3 text-right">
-                <button onClick={async () => { if (window.confirm('¿Eliminar empleado?')) await deleteDoc(doc(db, 'usuarios', u.uid)); }}
+                <button onClick={async () => { if (window.confirm(T.deleteConfirm)) await deleteDoc(doc(db, 'usuarios', u.uid)); }}
                   className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition">
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -1240,25 +1615,41 @@ function EmployeeTable({ users, T, departments, onViewProfile }) {
 
 // ─── COMPONENTES RESTANTES (sin cambios, solo se añade clase custom-select a los selects) ───
 // (Se incluyen aquí de forma resumida, pero en tu código deben estar completos)
-function DepartmentsTab({ departments, newDept, setNewDept, showToast }) {
+function DepartmentsTab({ departments, newDept, setNewDept, showToast, T }) {
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
-        <input value={newDept} onChange={e => setNewDept(e.target.value)} placeholder="Nombre del departamento"
-          className="flex-1 border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl text-sm" />
-        <button onClick={async () => {
-          if (!newDept.trim()) return;
-          await addDoc(collection(db, 'departamentos'), { nombre: newDept.trim(), timestamp: serverTimestamp() });
-          setNewDept(''); showToast('Departamento creado');
-        }} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-1 transition">
-          <Plus className="w-4 h-4" /> Añadir
+        <input
+          value={newDept}
+          onChange={e => setNewDept(e.target.value)}
+          placeholder={T.departmentPlaceholder}
+          className="flex-1 border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl text-sm"
+        />
+        <button
+          onClick={async () => {
+            if (!newDept.trim()) return;
+            await addDoc(collection(db, 'departamentos'), { nombre: newDept.trim(), timestamp: serverTimestamp() });
+            setNewDept('');
+            showToast(T.departmentCreated);
+          }}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-1 transition"
+        >
+          <Plus className="w-4 h-4" /> {T.addButton}
         </button>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {departments.map(d => (
           <div key={d.id} className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 p-3 rounded-xl flex justify-between items-center">
-            <span className="text-sm font-medium flex items-center gap-1.5"><Building2 className="w-4 h-4 text-indigo-400" />{d.nombre}</span>
-            <button onClick={async () => await deleteDoc(doc(db, 'departamentos', d.id))} className="text-red-400 hover:text-red-600 transition"><X className="w-3.5 h-3.5" /></button>
+            <span className="text-sm font-medium flex items-center gap-1.5">
+              <Building2 className="w-4 h-4 text-indigo-400" />
+              {d.nombre}
+            </span>
+            <button
+              onClick={async () => await deleteDoc(doc(db, 'departamentos', d.id))}
+              className="text-red-400 hover:text-red-600 transition"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         ))}
       </div>
@@ -1270,10 +1661,10 @@ function AdminReports({ users, T }) {
   const working  = users.filter(u => u.isClockedIn).length;
   const totalHrs = users.reduce((a, u) => a + (u.total_horas_semana || 0), 0);
   const stats = [
-    { label: 'Total empleados',   value: users.length,                                    color: 'indigo', icon: <Users className="w-5 h-5" /> },
-    { label: 'Trabajando ahora',  value: working,                                          color: 'green',  icon: <CheckCircle2 className="w-5 h-5" /> },
-    { label: 'Horas sem. total',  value: totalHrs.toFixed(0) + 'h',                        color: 'blue',   icon: <Clock className="w-5 h-5" /> },
-    { label: 'Media h/empleado',  value: users.length ? (totalHrs / users.length).toFixed(1) + 'h' : '0h', color: 'purple', icon: <TrendingUp className="w-5 h-5" /> },
+    { label: T.totalEmployees,   value: users.length,                                    color: 'indigo', icon: <Users className="w-5 h-5" /> },
+    { label: T.workingNow,       value: working,                                          color: 'green',  icon: <CheckCircle2 className="w-5 h-5" /> },
+    { label: T.totalHoursWeek,   value: totalHrs.toFixed(0) + 'h',                        color: 'blue',   icon: <Clock className="w-5 h-5" /> },
+    { label: T.avgHoursPerEmployee, value: users.length ? (totalHrs / users.length).toFixed(1) + 'h' : '0h', color: 'purple', icon: <TrendingUp className="w-5 h-5" /> },
   ];
   return (
     <div className="space-y-5">
@@ -1288,7 +1679,12 @@ function AdminReports({ users, T }) {
       </div>
       <table className="w-full text-sm text-left">
         <thead className="text-xs text-gray-400 uppercase border-b dark:border-slate-700">
-          <tr><th className="pb-2">Empleado</th><th className="pb-2 text-center">Horas</th><th className="pb-2 text-center">Estado</th><th className="pb-2 text-center">Vac.</th></tr>
+          <tr>
+            <th className="pb-2">{T.reportEmployee}</th>
+            <th className="pb-2 text-center">{T.reportHours}</th>
+            <th className="pb-2 text-center">{T.reportStatus}</th>
+            <th className="pb-2 text-center">{T.reportVacationDays}</th>
+          </tr>
         </thead>
         <tbody>
           {users.map(u => {
@@ -1345,8 +1741,11 @@ function ProjectsTab({ currentUser, T, showToast }) {
       await uploadBytes(fRef, file);
       const url = await getDownloadURL(fRef);
       await addDoc(collection(db, 'archivos'), { uid: currentUser.uid, nombre: currentUser.nombre, nombreArchivo: file.name, url, timestamp: serverTimestamp() });
-      showToast('Archivo subido ✓'); setFile(null);
-    } catch { showToast('Error al subir', 'error'); }
+      showToast(T.uploadSuccess);
+      setFile(null);
+    } catch {
+      showToast(T.uploadError, 'error');
+    }
     setUploading(false);
   };
 
@@ -1355,7 +1754,7 @@ function ProjectsTab({ currentUser, T, showToast }) {
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
         <h3 className="font-bold mb-4 flex items-center gap-2"><BarChart2 className="w-5 h-5 text-indigo-500" /> {T.hoursProject}</h3>
         {Object.keys(horasPorProyecto).length === 0
-          ? <p className="text-gray-400 text-sm">Sin datos aún.</p>
+          ? <p className="text-gray-400 text-sm">{T.noData}</p>
           : <div className="space-y-3">
               {Object.entries(horasPorProyecto).map(([proj, h]) => (
                 <div key={proj}>
@@ -1372,8 +1771,24 @@ function ProjectsTab({ currentUser, T, showToast }) {
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
         <h3 className="font-bold mb-4 flex items-center gap-2"><Paperclip className="w-5 h-5 text-indigo-500" /> {T.upload}</h3>
         <div className="flex gap-3 items-center mb-4 flex-wrap">
-          <input type="file" onChange={e => setFile(e.target.files[0])}
-            className="text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 flex-1 min-w-0" />
+          <div className="relative flex-1 min-w-0">
+            <input
+              type="file"
+              id="file-upload-projects"
+              onChange={e => setFile(e.target.files[0])}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => document.getElementById('file-upload-projects').click()}
+              className="bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-xl text-sm font-medium transition"
+            >
+              {T.selectFile}
+            </button>
+            <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">
+              {file ? file.name : T.noFileSelected}
+            </span>
+          </div>
           <button onClick={handleUpload} disabled={!file || uploading}
             className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-40 flex items-center gap-1.5 transition whitespace-nowrap">
             <Paperclip className="w-4 h-4" /> {uploading ? '...' : T.upload}
@@ -1385,7 +1800,7 @@ function ProjectsTab({ currentUser, T, showToast }) {
               <span className="flex items-center gap-1.5 truncate"><FileText className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />{a.nombreArchivo}</span>
               <a href={a.url} target="_blank" rel="noreferrer"
                 className="text-indigo-600 hover:underline ml-2 flex-shrink-0 flex items-center gap-1">
-                <Download className="w-3 h-3" /> Ver
+                <Download className="w-3 h-3" /> {T.viewLink}
               </a>
             </div>
           ))}
@@ -1406,10 +1821,16 @@ function ReportsTab({ currentUser, T }) {
   }, [currentUser.uid]);
 
   const exportCSV = () => {
-    const head = ['Fecha', 'Entrada', 'Salida', 'Horas', 'Proyecto'];
+    const head = [T.reportDate, T.reportClockIn, T.reportClockOut, T.reportHours, T.reportProject];
     const rows = fichajes.map(f => {
       const h = f.entrada && f.salida ? ((new Date(f.salida) - new Date(f.entrada)) / 3600000).toFixed(1) : '-';
-      return [`"${f.fecha}"`, `"${f.entrada ? new Date(f.entrada).toLocaleTimeString() : '-'}"`, `"${f.salida ? new Date(f.salida).toLocaleTimeString() : '-'}"`, h, `"${f.proyecto || '-'}"`].join(',');
+      return [
+        `"${f.fecha}"`,
+        `"${f.entrada ? new Date(f.entrada).toLocaleTimeString() : '-'}"`,
+        `"${f.salida ? new Date(f.salida).toLocaleTimeString() : '-'}"`,
+        h,
+        `"${f.proyecto || '-'}"`
+      ].join(',');
     });
     const link = document.createElement('a');
     link.href = encodeURI('data:text/csv;charset=utf-8,' + [head.join(','), ...rows].join('\n'));
@@ -1429,7 +1850,13 @@ function ReportsTab({ currentUser, T }) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-400 uppercase border-b dark:border-slate-700">
-            <tr><th className="pb-2">Fecha</th><th className="pb-2">Entrada</th><th className="pb-2">Salida</th><th className="pb-2">Horas</th><th className="pb-2">Proyecto</th></tr>
+            <tr>
+              <th className="pb-2">{T.reportDate}</th>
+              <th className="pb-2">{T.reportClockIn}</th>
+              <th className="pb-2">{T.reportClockOut}</th>
+              <th className="pb-2">{T.reportHours}</th>
+              <th className="pb-2">{T.reportProject}</th>
+            </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-slate-700">
             {fichajes.slice(0, 30).map(f => {
@@ -1437,8 +1864,15 @@ function ReportsTab({ currentUser, T }) {
               return (
                 <tr key={f.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
                   <td className="py-2">{f.fecha}</td>
-                  <td className="py-2">{f.entrada ? new Date(f.entrada).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
-                  <td className="py-2">{f.salida ? new Date(f.salida).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : <span className="text-green-500 font-medium">En curso</span>}</td>
+                  <td className="py-2">
+                    {f.entrada ? new Date(f.entrada).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                  </td>
+                  <td className="py-2">
+                    {f.salida
+                      ? new Date(f.salida).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      : <span className="text-green-500 font-medium">{T.inProgress}</span>
+                    }
+                  </td>
                   <td className="py-2 font-bold">{h}h</td>
                   <td className="py-2 text-gray-500">{f.proyecto || '-'}</td>
                 </tr>
@@ -1494,7 +1928,7 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
       });
       setFInicio(''); setFFin(''); setArchivo(null); setTipoAus('vacaciones');
       showToast(T.requestSent);
-    } catch { showToast('Error', 'error'); }
+    } catch { showToast(T.generalError, 'error'); }
     setIsSub(false);
   };
 
@@ -1515,8 +1949,8 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
           `Hola ${emp.nombre},\n\nTu solicitud de ${tipo} ha sido ${emoji} ${accion.toUpperCase()}.\n\nFechas: ${formatDate(fechaInicio)} → ${formatDate(fechaFin)} (${dias} días)\n\nsysTicket`
         );
       }
-      showToast(`${accion === 'aprobada' ? '✅' : '❌'} Solicitud ${accion}`, accion === 'aprobada' ? 'success' : 'warning');
-    } catch { showToast('Error', 'error'); }
+      showToast(accion === 'aprobada' ? T.requestApproved : T.requestRejected, accion === 'aprobada' ? 'success' : 'warning');
+    } catch { showToast(T.generalError, 'error'); }
   };
 
   const pendientes    = solicitudes.filter(s => s.estado === 'pendiente');
@@ -1540,9 +1974,9 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
                 <form onSubmit={handleSolicitar} className="space-y-3">
                   <select value={tipoAus} onChange={e => setTipoAus(e.target.value)}
                     className="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 p-2.5 rounded-xl text-sm custom-select">
-                    <option value="vacaciones">🏖 Vacaciones</option>
-                    <option value="baja_medica">🏥 {T.medicalLeave}</option>
-                    <option value="cita_medica">🩺 {T.medicalAppt}</option>
+                    <option value="vacaciones">{T.vacationOption}</option>
+                    <option value="baja_medica">{T.medicalLeaveOption.replace('{medicalLeave}', T.medicalLeave)}</option>
+                    <option value="cita_medica">{T.medicalApptOption.replace('{medicalAppt}', T.medicalAppt)}</option>
                   </select>
                   <div className="flex gap-2">
                     <input type="date" required value={fInicio} onChange={e => setFInicio(e.target.value)}
@@ -1553,11 +1987,32 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
                   {(tipoAus !== 'vacaciones') && (
                     <div className="border-2 border-dashed border-gray-200 dark:border-slate-600 rounded-xl p-3 text-center">
                       <Paperclip className="w-4 h-4 text-gray-400 mx-auto mb-1" />
-                      <input type="file" required accept="image/*,.pdf" onChange={e => setArchivo(e.target.files[0])} className="w-full text-xs text-gray-500" />
+                      <div className="flex items-center justify-center gap-3 flex-wrap">
+                        <div className="relative">
+                          <input
+                            type="file"
+                            id="file-upload-absence"
+                            required
+                            accept="image/*,.pdf"
+                            onChange={e => setArchivo(e.target.files[0])}
+                            className="hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => document.getElementById('file-upload-absence').click()}
+                            className="bg-indigo-100 dark:bg-indigo-900/50 hover:bg-indigo-200 dark:hover:bg-indigo-800 text-indigo-700 dark:text-indigo-300 px-4 py-2 rounded-xl text-sm font-medium transition"
+                          >
+                            {T.selectFile}
+                          </button>
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {archivo ? archivo.name : T.noFileSelected}
+                        </span>
+                      </div>
                     </div>
                   )}
                   {fInicio && fFin && new Date(fInicio) <= new Date(fFin) && (
-                    <p className="text-xs text-indigo-500 font-semibold">{calculateDays(fInicio, fFin)} días</p>
+                    <p className="text-xs text-indigo-500 font-semibold">{calculateDays(fInicio, fFin)} {T.daysUnit}</p>
                   )}
                   <button type="submit" disabled={isSub}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50 transition">
@@ -1579,7 +2034,9 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
                       </span>
                       <span className={`uppercase font-bold text-[9px] px-1.5 py-0.5 rounded-full ${
                         s.estado === 'aprobada' ? 'bg-green-100 text-green-700' : s.estado === 'rechazada' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'
-                      }`}>{s.estado}</span>
+                      }`}>
+                        {s.estado === 'aprobada' ? T.statusApproved : s.estado === 'rechazada' ? T.statusRejected : T.statusPending}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -1601,13 +2058,15 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
                         className="w-7 h-7 rounded-full object-cover" alt="" />
                       <div>
                         <p className="font-bold">{s.nombreEmpleado}</p>
-                        <p className="text-[10px] text-gray-400 uppercase">{s.tipo}</p>
+                        <p className="text-[10px] text-gray-400 uppercase">
+                          {s.tipo === 'vacaciones' ? T.typeVacation : s.tipo === 'baja_medica' ? T.typeMedicalLeave : T.typeMedicalAppt}
+                        </p>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500 mb-2">{formatDate(s.fechaInicio)} → {formatDate(s.fechaFin)} · <strong>{s.diasSolicitados}d</strong></p>
+                    <p className="text-xs text-gray-500 mb-2">{formatDate(s.fechaInicio)} → {formatDate(s.fechaFin)} · <strong>{s.diasSolicitados}{T.daysUnit}</strong></p>
                     {s.urlJustificante && (
                       <a href={s.urlJustificante} target="_blank" rel="noreferrer" className="text-blue-500 text-xs hover:underline flex gap-1 items-center mb-2">
-                        <FileText className="w-3 h-3" /> Ver justificante
+                        <FileText className="w-3 h-3" /> {T.viewJustification}
                       </a>
                     )}
                     <div className="flex gap-2">
@@ -1622,7 +2081,7 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
                     </div>
                   </div>
                 ))}
-                {pendientes.length === 0 && <p className="text-sm text-orange-400 text-center py-4">Sin solicitudes pendientes ✓</p>}
+                {pendientes.length === 0 && <p className="text-sm text-orange-400 text-center py-4">{T.noPendingRequests}</p>}
               </div>
             </div>
           )}
@@ -1634,7 +2093,14 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
           </div>
           <div className="p-4 overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead><tr className="text-xs text-gray-400 uppercase border-b dark:border-slate-700"><th className="pb-2">Empleado</th><th className="pb-2">Tipo</th><th className="pb-2">Fechas</th><th className="pb-2 text-right">Días</th></tr></thead>
+              <thead>
+                <tr className="text-xs text-gray-400 uppercase border-b dark:border-slate-700">
+                  <th className="pb-2">{T.reportEmployee}</th>
+                  <th className="pb-2">{T.reportType}</th>
+                  <th className="pb-2">{T.reportDates}</th>
+                  <th className="pb-2 text-right">{T.reportDays}</th>
+                </tr>
+              </thead>
               <tbody>
                 {aprobadas.map(v => (
                   <tr key={v.id} className="border-b border-gray-50 dark:border-slate-700/50">
@@ -1643,9 +2109,13 @@ function AbsenceModule({ currentUser, T, showToast, adminMode = false }) {
                         className="w-6 h-6 rounded-full object-cover" alt="" />
                       {v.nombreEmpleado}
                     </td>
-                    <td className="py-2 text-xs text-gray-500">{v.tipo === 'vacaciones' ? '🏖' : v.tipo === 'baja_medica' ? '🏥' : '🩺'} {v.tipo}</td>
+                    <td className="py-2 text-xs text-gray-500">
+                      {v.tipo === 'vacaciones' ? '🏖' : v.tipo === 'baja_medica' ? '🏥' : '🩺'}
+                      {' '}
+                      {v.tipo === 'vacaciones' ? T.typeVacation : v.tipo === 'baja_medica' ? T.typeMedicalLeave : T.typeMedicalAppt}
+                    </td>
                     <td className="py-2 text-xs">{formatDate(v.fechaInicio)} – {formatDate(v.fechaFin)}</td>
-                    <td className="py-2 text-right font-bold text-blue-500">{v.diasSolicitados}d</td>
+                    <td className="py-2 text-right font-bold text-blue-500">{v.diasSolicitados}{T.daysUnit}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1718,7 +2188,7 @@ function GlobalChatManager({ currentUser, onClose, T }) {
             )}
           </button>
         ))}
-        {allowedContacts.length === 0 && <p className="text-center text-gray-400 text-sm py-8">Sin contactos</p>}
+        {allowedContacts.length === 0 && <p className="text-center text-gray-400 text-sm py-8">{T.noContacts}</p>}
       </div>
     </div>
   );
@@ -1782,7 +2252,7 @@ function ChatBox({ currentUserId, otherParty, T }) {
               {m.fileUrl && (
                 <a href={m.fileUrl} target="_blank" rel="noreferrer"
                   className={`flex items-center gap-1 text-xs mt-1 underline ${m.from === currentUserId ? 'text-indigo-200' : 'text-indigo-500'}`}>
-                  <Paperclip className="w-3 h-3" /> {m.fileName || 'Archivo'}
+                  <Paperclip className="w-3 h-3" /> {m.fileName || T.fileAttachment}
                 </a>
               )}
             </div>
